@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin | TelePlus Care Bookings</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body class="admin-body">
+    <main class="admin-shell">
+      <div id="adminMessage" class="form-message admin-toast" role="status"></div>
+
+      <!-- ===================== HOME (card menu) ===================== -->
+      <section class="admin-page admin-home" data-page="home">
+        <div class="home-hero">
+          <p class="eyebrow">Admin</p>
+          <h1>Welcome back 👋</h1>
+          <p class="page-sub">Pick what you'd like to do. Tap a card to open it.</p>
+        </div>
+
+        <div id="dashboardCards" class="dashboard-cards"></div>
+
+        <div class="nav-card-grid">
+          <button type="button" class="nav-card" data-go="bookings">
+            <span class="nav-card-icon">📅</span>
+            <strong>Appointments</strong>
+            <span class="nav-card-sub">See and manage all bookings</span>
+          </button>
+          <button type="button" class="nav-card" data-go="requests">
+            <span class="nav-card-icon">📋</span>
+            <strong>Service Requests</strong>
+            <span class="nav-card-sub">Doctor notes &amp; prescription refills</span>
+          </button>
+          <button type="button" class="nav-card" data-go="day-control">
+            <span class="nav-card-icon">🕒</span>
+            <strong>Day Control</strong>
+            <span class="nav-card-sub">See open &amp; filled spots, free a slot</span>
+          </button>
+          <button type="button" class="nav-card" data-go="schedule">
+            <span class="nav-card-icon">🗓️</span>
+            <strong>Schedule &amp; Hours</strong>
+            <span class="nav-card-sub">Open days, hours, breaks, closed dates</span>
+          </button>
+          <button type="button" class="nav-card" data-go="services">
+            <span class="nav-card-icon">💲</span>
+            <strong>Services &amp; Prices</strong>
+            <span class="nav-card-sub">Add services and change prices</span>
+          </button>
+          <button type="button" class="nav-card" data-go="waitlist">
+            <span class="nav-card-icon">⏳</span>
+            <strong>Waitlist</strong>
+            <span class="nav-card-sub">Patients waiting for a spot</span>
+          </button>
+          <button type="button" class="nav-card" data-go="cancellation">
+            <span class="nav-card-icon">📝</span>
+            <strong>Cancellation Rules</strong>
+            <span class="nav-card-sub">Cutoff time, fees, and policy text</span>
+          </button>
+          <button type="button" class="nav-card" data-go="emails">
+            <span class="nav-card-icon">✉️</span>
+            <strong>Emails &amp; Reminders</strong>
+            <span class="nav-card-sub">Message text, reminder timing, alerts</span>
+          </button>
+          <button type="button" class="nav-card" data-go="marketing">
+            <span class="nav-card-icon">📈</span>
+            <strong>Marketing</strong>
+            <span class="nav-card-sub">Forms people started but didn't finish</span>
+          </button>
+          <button type="button" class="nav-card nav-card-tech" data-go="email-setup">
+            <span class="nav-card-icon">⚙️</span>
+            <strong>Email Delivery Setup</strong>
+            <span class="nav-card-sub">Connect your email account (technical)</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================== APPOINTMENTS ===================== -->
+      <section class="admin-page" data-page="bookings" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Appointments</p>
+              <h1>Bookings</h1>
+              <p class="page-sub">Search, update status and payment, add notes, and export.</p>
+            </div>
+            <div id="adminStats" class="clinic-badges"></div>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <label class="search-field">
+            Search
+            <input id="searchFilter" type="search" placeholder="Name, email, phone, reference">
+          </label>
+          <label>
+            Status
+            <select id="statusFilter">
+              <option value="">All</option>
+              <option value="new">New</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="no_show">No-show</option>
+            </select>
+          </label>
+          <label>
+            Appointment Date
+            <input id="dateFilter" type="date">
+          </label>
+          <div class="view-toggle" aria-label="Admin view">
+            <button type="button" id="listViewButton" class="secondary-button active">List</button>
+            <button type="button" id="calendarViewButton" class="secondary-button">Calendar</button>
+          </div>
+          <button type="button" id="refreshButton" class="secondary-button">Refresh</button>
+          <a id="exportLink" class="secondary-button" href="/api/admin/export.csv">Export CSV</a>
+          <a id="calendarExportLink" class="secondary-button" href="/api/admin/calendar.ics">Calendar ICS</a>
+        </div>
+
+        <div id="adminCalendar" class="admin-calendar" hidden></div>
+
+        <div id="bookingTableWrap" class="inbox">
+          <div class="inbox-list" id="bookingList" aria-label="Bookings"></div>
+          <div class="inbox-detail" id="bookingDetail"></div>
+        </div>
+      </section>
+
+      <!-- ===================== SERVICE REQUESTS ===================== -->
+      <section class="admin-page" data-page="requests" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Service Requests</p>
+              <h1>Doctor Notes &amp; Refills</h1>
+              <p class="page-sub">Review requests, update status and payment, download proof files.</p>
+            </div>
+            <div id="serviceRequestStats" class="clinic-badges"></div>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <label class="search-field">
+            Search
+            <input id="serviceRequestSearchFilter" type="search" placeholder="Name, email, phone, reference">
+          </label>
+          <label>
+            Type
+            <select id="serviceRequestTypeFilter">
+              <option value="">All</option>
+              <option value="doctor_note">Doctor Note</option>
+              <option value="prescription_refill">Prescription Refill</option>
+            </select>
+          </label>
+          <label>
+            Status
+            <select id="serviceRequestStatusFilter">
+              <option value="">All</option>
+              <option value="new">New</option>
+              <option value="in_review">In review</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </label>
+          <button type="button" id="serviceRequestRefreshButton" class="secondary-button">Refresh</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="bookings-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Patient</th>
+                <th>Request</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Attachments</th>
+                <th>Notes</th>
+                <th>Update</th>
+              </tr>
+            </thead>
+            <tbody id="serviceRequestRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== DAY CONTROL ===================== -->
+      <section class="admin-page" data-page="day-control" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Daily Control</p>
+              <h1>Slot Occupancy</h1>
+              <p class="page-sub">See how many spots are filled, open or close a time, and free a booked slot.</p>
+            </div>
+            <div class="slot-control-actions">
+              <label class="compact-field">
+                Date
+                <input id="slotControlDate" type="date">
+              </label>
+              <button type="button" id="slotControlRefreshButton" class="secondary-button">Refresh</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="slotControlStats" class="slot-control-stats"></div>
+        <div id="slotControlGrid" class="slot-control-grid"></div>
+      </section>
+
+      <!-- ===================== SCHEDULE ===================== -->
+      <section class="admin-page" data-page="schedule" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Schedule</p>
+              <h1>Schedule &amp; Hours</h1>
+              <p class="page-sub">Set open days, appointment length, breaks, closed dates, and extra slots.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-body schedule-box-body">
+            <div class="section-heading-row compact-row">
+              <div>
+                <p class="payment-note" id="scheduleStatus">Loading schedule settings...</p>
+              </div>
+              <label class="compact-field">
+                Appointment length
+                <select id="scheduleInterval">
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="20">20 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">60 minutes</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="scheduleDays" class="schedule-days"></div>
+
+            <div class="schedule-exceptions">
+              <div class="schedule-exception-card">
+                <h3>Closed Dates</h3>
+                <div class="schedule-exception-controls">
+                  <input id="blockedDatePicker" type="date" aria-label="Closed date">
+                  <button type="button" id="addBlockedDateButton" class="secondary-button">Add</button>
+                </div>
+                <div id="blockedDatesList" class="schedule-chip-list" aria-label="Closed dates"></div>
+              </div>
+
+              <div class="schedule-exception-card">
+                <h3>Closed Specific Slots</h3>
+                <div class="schedule-exception-controls slot-controls">
+                  <input id="blockedSlotDate" type="date" aria-label="Closed slot date">
+                  <select id="blockedSlotTime" aria-label="Closed slot time"></select>
+                  <button type="button" id="addBlockedSlotButton" class="secondary-button">Add</button>
+                </div>
+                <div id="blockedSlotsList" class="schedule-chip-list" aria-label="Closed specific slots"></div>
+              </div>
+
+              <div class="schedule-exception-card">
+                <h3>Extra Open Slots</h3>
+                <div class="schedule-exception-controls slot-controls">
+                  <input id="extraSlotDate" type="date" aria-label="Extra slot date">
+                  <select id="extraSlotTime" aria-label="Extra slot time"></select>
+                  <button type="button" id="addExtraSlotButton" class="secondary-button">Add</button>
+                </div>
+                <div id="extraSlotsList" class="schedule-chip-list" aria-label="Extra open slots"></div>
+              </div>
+            </div>
+
+            <div class="form-actions schedule-actions">
+              <button type="button" id="saveScheduleSettings" class="primary-button">Save Schedule</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== SERVICES & PRICES ===================== -->
+      <section class="admin-page" data-page="services" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Owner Tools</p>
+              <h1>Services &amp; Prices</h1>
+              <p class="page-sub">Edit the services patients can choose, their prices, and health-card rules.</p>
+            </div>
+            <div id="serviceBuilderStats" class="clinic-badges"></div>
+          </div>
+        </div>
+
+        <div class="section-heading-row">
+          <div>
+            <p class="payment-note">Changes go live on the public booking form as soon as you press Save.</p>
+          </div>
+          <div class="slot-control-actions">
+            <button type="button" id="addServiceButton" class="secondary-button">Add Service</button>
+            <button type="button" id="saveServicesButton" class="primary-button">Save Services</button>
+          </div>
+        </div>
+
+        <div id="serviceBuilderRows" class="service-builder-list"></div>
+      </section>
+
+      <!-- ===================== WAITLIST ===================== -->
+      <section class="admin-page" data-page="waitlist" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Staff Follow Up</p>
+              <h1>Waitlist</h1>
+              <p class="page-sub">Patients waiting for full dates. Offer them a freed slot.</p>
+            </div>
+            <div id="waitlistStats" class="clinic-badges"></div>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <label class="search-field">
+            Search
+            <input id="waitlistSearchFilter" type="search" placeholder="Name, email, phone, service">
+          </label>
+          <label>
+            Status
+            <select id="waitlistStatusFilter">
+              <option value="">All</option>
+              <option value="new">New</option>
+              <option value="offered">Offered</option>
+              <option value="booked">Booked</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </label>
+          <label>
+            Desired Date
+            <input id="waitlistDateFilter" type="date">
+          </label>
+          <button type="button" id="waitlistRefreshButton" class="secondary-button">Refresh</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="bookings-table">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Requested</th>
+                <th>Service</th>
+                <th>Status</th>
+                <th>Offer Time</th>
+                <th>Notes</th>
+                <th>Update</th>
+              </tr>
+            </thead>
+            <tbody id="waitlistRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== CANCELLATION RULES ===================== -->
+      <section class="admin-page" data-page="cancellation" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Policy</p>
+              <h1>Cancellation Rules</h1>
+              <p class="page-sub">Set the online cancellation cutoff, fees, and the policy shown to patients.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-body">
+            <p class="payment-note" id="cancellationPolicyStatus">Loading cancellation rules...</p>
+            <div class="settings-grid">
+              <label>
+                Online cancellation cutoff
+                <span class="inline-control">
+                  <input id="cancellationCutoffHours" type="number" min="0" max="168" step="1">
+                  <span>hours before appointment</span>
+                </span>
+              </label>
+              <label>
+                No-show fee
+                <span class="inline-control">
+                  <input id="noShowFeeDollars" type="number" min="0" max="500" step="1">
+                  <span>CAD</span>
+                </span>
+              </label>
+              <label>
+                Refund admin/payment fee
+                <span class="inline-control">
+                  <input id="refundAdminFeeDollars" type="number" min="0" max="500" step="1">
+                  <span>CAD</span>
+                </span>
+              </label>
+              <label class="checkbox-field">
+                <input id="sendCancellationEmail" type="checkbox">
+                <span>Send automatic cancellation email</span>
+              </label>
+              <label class="full-width">
+                Policy text shown in cancellation email
+                <textarea id="cancellationPolicyText" rows="4"></textarea>
+              </label>
+            </div>
+            <button type="button" id="saveCancellationPolicy" class="primary-button">Save Cancellation Rules</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== EMAILS & REMINDERS ===================== -->
+      <section class="admin-page" data-page="emails" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Patient Messaging</p>
+              <h1>Emails &amp; Reminders</h1>
+              <p class="page-sub">Choose which messages send, edit their wording, set reminder timing, and pick where staff alerts go. No technical knowledge needed.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-head">
+            <h3>Reminder Timing</h3>
+            <p>When patients get a reminder before their appointment.</p>
+          </div>
+          <div class="panel-card-body reminder-box-body">
+            <div>
+              <p class="payment-note" id="reminderStatus">Loading reminder settings...</p>
+            </div>
+            <label>
+              Send reminder before appointment
+              <span class="inline-control">
+                <input id="reminderMinutesBefore" type="number" min="1" max="1440" step="1" value="30">
+                <span>minutes</span>
+              </span>
+            </label>
+            <button type="button" id="saveReminderSettings" class="secondary-button">Save Reminder Time</button>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-head">
+            <h3>Automatic Messages to Patients</h3>
+            <p>Turn each message on or off and edit the wording patients see.</p>
+          </div>
+          <div class="panel-card-body">
+            <p class="payment-note" id="emailSettingsStatus">Loading email settings...</p>
+            <div class="settings-toggle-grid compact">
+              <label class="checkbox-line">
+                <input id="patientConfirmationsEnabled" type="checkbox">
+                <span>Appointment confirmation</span>
+              </label>
+              <label class="checkbox-line">
+                <input id="serviceRequestConfirmationsEnabled" type="checkbox">
+                <span>Doctor note / refill confirmation</span>
+              </label>
+              <label class="checkbox-line">
+                <input id="reminderEmailsEnabled" type="checkbox">
+                <span>Appointment reminders</span>
+              </label>
+            </div>
+            <div class="template-grid">
+              <label>
+                Appointment subject
+                <input id="appointmentSubject">
+              </label>
+              <label>
+                Appointment message
+                <textarea id="appointmentIntro" rows="4"></textarea>
+              </label>
+              <label>
+                Doctor note / refill subject
+                <input id="serviceRequestSubject">
+              </label>
+              <label>
+                Doctor note / refill message
+                <textarea id="serviceRequestIntro" rows="4"></textarea>
+              </label>
+              <label>
+                Reminder subject
+                <input id="reminderSubject">
+              </label>
+              <label>
+                Reminder message
+                <textarea id="reminderIntro" rows="4"></textarea>
+              </label>
+            </div>
+            <label class="full-width">
+              Refund &amp; cancellation policy link
+              <input id="refundPolicyUrl" type="url" placeholder="https://telepluscare.com/refund-policy/">
+              <small class="field-hint">Added as a link in the patient's confirmation email so they can read your policy. Leave blank to hide it.</small>
+            </label>
+            <div class="merge-fields">
+              <p class="merge-fields-title">Personalize any message — type any of these and they fill in automatically:</p>
+              <ul class="merge-fields-list">
+                <li><code>{firstName}</code><span>patient's first name</span></li>
+                <li><code>{patientName}</code><span>full name</span></li>
+                <li><code>{appointmentDate}</code><span>appointment date</span></li>
+                <li><code>{appointmentTime}</code><span>appointment time</span></li>
+                <li><code>{service}</code><span>service booked</span></li>
+                <li><code>{total}</code><span>amount</span></li>
+                <li><code>{reference}</code><span>booking code</span></li>
+                <li><code>{paymentStatus}</code><span>paid / pending</span></li>
+              </ul>
+            </div>
+            <button type="button" id="saveEmailSettings" class="primary-button">Save Patient Messages</button>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-head">
+            <h3>Staff Alerts</h3>
+            <p>Get an email to your team whenever a new booking or request comes in.</p>
+          </div>
+          <div class="panel-card-body">
+            <label class="checkbox-line fit-content">
+              <input id="adminNotificationsEnabled" type="checkbox">
+              <span>Email our team about new bookings &amp; requests</span>
+            </label>
+            <label class="full-width">
+              Who should get a copy of every new booking &amp; request?
+              <textarea id="adminNotificationEmails" rows="4" placeholder="booking@telepluscare.com&#10;dr.smith@telepluscare.com&#10;frontdesk@telepluscare.com"></textarea>
+              <small class="field-hint">Add one email address per line. Every address listed here receives a copy &mdash; add all your doctors or front-desk staff.</small>
+            </label>
+            <div class="template-grid">
+              <label>
+                New booking alert subject
+                <input id="adminBookingSubject">
+              </label>
+              <label>
+                New request alert subject
+                <input id="adminServiceRequestSubject">
+              </label>
+            </div>
+            <button type="button" data-save-email-settings class="primary-button">Save Staff Alerts</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== EMAIL DELIVERY SETUP (technical) ===================== -->
+      <section class="admin-page" data-page="email-setup" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Technical Setup</p>
+              <h1>Email Delivery Setup</h1>
+              <p class="page-sub">Connect the email account that sends your messages. This is usually done once by a developer or IT provider.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-body">
+            <div class="developer-note">
+              These settings control how email is technically sent (SMTP). The patient message wording lives under <strong>Emails &amp; Reminders</strong>. If you're not sure what to enter here, ask your developer or email host.
+            </div>
+
+            <div class="settings-grid developer-settings-grid">
+              <label class="checkbox-field">
+                <input id="smtpEnabled" type="checkbox">
+                <span>Turn on email sending</span>
+              </label>
+              <label>
+                Email server (SMTP host)
+                <input id="smtpHost" placeholder="smtp.gmail.com">
+              </label>
+              <label>
+                Port
+                <input id="smtpPort" type="number" min="1" max="65535" step="1" placeholder="587">
+              </label>
+              <label class="checkbox-field">
+                <input id="smtpSecure" type="checkbox">
+                <span>Use SSL/TLS</span>
+              </label>
+              <label>
+                Username
+                <input id="smtpUser" autocomplete="off" placeholder="booking@telepluscare.com">
+              </label>
+              <label>
+                Password
+                <input id="smtpPass" type="password" autocomplete="new-password" placeholder="Leave blank to keep existing password">
+                <small id="smtpPasswordStatus">No password saved.</small>
+              </label>
+              <label class="checkbox-field">
+                <input id="clearSmtpPassword" type="checkbox">
+                <span>Clear saved password</span>
+              </label>
+              <label>
+                "From" name &amp; email
+                <input id="smtpFrom" placeholder="TelePlus Care <booking@telepluscare.com>">
+              </label>
+              <label>
+                Reply-to email
+                <input id="smtpReplyTo" placeholder="booking@telepluscare.com">
+              </label>
+            </div>
+
+            <div class="test-email-row">
+              <label>
+                Send yourself a test email
+                <input id="testEmailTo" type="email" placeholder="you@example.com">
+              </label>
+              <button type="button" id="sendTestEmailButton" class="secondary-button">Send Test</button>
+            </div>
+            <button type="button" data-save-email-settings class="primary-button">Save Email Setup</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== MARKETING ===================== -->
+      <section class="admin-page" data-page="marketing" hidden>
+        <div class="page-top">
+          <button type="button" class="back-button" data-go="home">&larr; Back to menu</button>
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">Marketing</p>
+              <h1>Abandoned Forms</h1>
+              <p class="page-sub">People who started a form but didn't finish. Reach out to win them back.</p>
+            </div>
+            <div id="marketingStats" class="clinic-badges"></div>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <label class="search-field">
+            Search
+            <input id="marketingSearchFilter" type="search" placeholder="Name, email, phone, field, draft ID">
+          </label>
+          <label>
+            Form
+            <select id="marketingFormTypeFilter">
+              <option value="">All</option>
+              <option value="appointment">Appointment</option>
+              <option value="doctor_note">Doctor Note</option>
+              <option value="prescription_refill">Prescription Refill</option>
+            </select>
+          </label>
+          <label>
+            Status
+            <select id="marketingStatusFilter">
+              <option value="active">Active</option>
+              <option value="submitted">Submitted</option>
+              <option value="archived">Archived</option>
+              <option value="">All</option>
+            </select>
+          </label>
+          <button type="button" id="marketingRefreshButton" class="secondary-button">Refresh</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="bookings-table marketing-table">
+            <thead>
+              <tr>
+                <th>Updated</th>
+                <th>Form</th>
+                <th>Contact</th>
+                <th>Last Field</th>
+                <th>Saved Fields</th>
+                <th>Status</th>
+                <th>Update</th>
+              </tr>
+            </thead>
+            <tbody id="marketingRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/header-nav.js" defer></script>
+    <script src="/admin.js" defer></script>
+  </body>
+</html>

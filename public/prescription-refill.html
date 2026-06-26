@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prescription Refill Request | TelePlus Care</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="https://telepluscare.com/" aria-label="TelePlus Care home">
+        <img class="site-logo" src="/images/telepluscare-logo.webp" alt="TelePlus Care">
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="topNav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+      <nav id="topNav" class="top-nav" aria-label="Main navigation">
+        <a href="https://telepluscare.com/">Home</a>
+        <a href="https://telepluscare.com/#services">Services</a>
+        <a href="https://telepluscare.com/about/">About</a>
+        <a href="https://telepluscare.com/blog/">Blog</a>
+        <a href="https://telepluscare.com/faq/">FAQ</a>
+        <a href="https://telepluscare.com/contact-us/">Contact</a>
+      </nav>
+      <a class="header-phone" href="/">Book Your Appointment Now</a>
+    </header>
+
+    <main class="booking-layout">
+      <section class="booking-panel" aria-labelledby="request-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Book Online</p>
+            <h1 id="request-title">Prescription Refill Appointment</h1>
+          </div>
+          <div class="clinic-badges" aria-label="Request highlights">
+            <span>Processed within 3 hours</span>
+            <span>Up to 3 medications</span>
+            <span>No controlled drugs</span>
+          </div>
+        </div>
+
+        <form id="serviceRequestForm" data-marketing-form-type="prescription_refill" data-submit-label="Submit Request" enctype="multipart/form-data" novalidate>
+          <input type="hidden" name="draftId">
+          <input type="hidden" name="requestType" value="prescription_refill">
+          <div class="form-progress-notice">
+            Form progress may be saved securely so our team can help if you do not finish this request. Card details are never collected on this form.
+          </div>
+
+          <section class="form-section request-intro">
+            <h2>Prescription Refill Appointment</h2>
+            <p>Prescription requests are processed within 3 hours after your appointment. Please provide accurate medication details and required proof.</p>
+            <p>Working hours: 9:00 AM-5:00 PM. Refunds: A $20 fee is deducted for administration and payment gateway charges.</p>
+          </section>
+
+          <section class="form-section">
+            <h2>Patient Details</h2>
+            <div class="form-grid">
+              <label>
+                First Name <span aria-hidden="true">*</span>
+                <input name="firstName" autocomplete="given-name" required>
+              </label>
+
+              <label>
+                Last Name <span aria-hidden="true">*</span>
+                <input name="lastName" autocomplete="family-name" required>
+              </label>
+
+              <label>
+                Phone <span aria-hidden="true">*</span>
+                <input name="phone" type="tel" autocomplete="tel" placeholder="(000) 000-0000" required>
+                <small>Please enter a valid phone number. Format: (000) 000-0000.</small>
+              </label>
+
+              <label>
+                Email <span aria-hidden="true">*</span>
+                <input name="email" type="email" autocomplete="email" placeholder="example@example.com" required>
+              </label>
+
+              <label class="full-width">
+                Street Address <span aria-hidden="true">*</span>
+                <input name="streetAddress" autocomplete="street-address" required>
+              </label>
+
+              <label>
+                City <span aria-hidden="true">*</span>
+                <input name="city" autocomplete="address-level2" required>
+              </label>
+
+              <label>
+                State / Province <span aria-hidden="true">*</span>
+                <input name="province" autocomplete="address-level1" required>
+              </label>
+
+              <label>
+                Postal / Zip Code <span aria-hidden="true">*</span>
+                <input name="postalCode" autocomplete="postal-code" required>
+              </label>
+
+              <label>
+                Date of Birth <span aria-hidden="true">*</span>
+                <input name="dateOfBirth" inputmode="numeric" placeholder="MM-DD-YYYY" pattern="\d{2}-\d{2}-\d{4}" required>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2>Refill Details</h2>
+            <div class="form-grid">
+              <label class="full-width">
+                Reason for Prescription Refill <span aria-hidden="true">*</span>
+                <textarea id="reason" name="reason" maxlength="150" rows="4" required></textarea>
+                <small><span id="reasonCount">0/150</span> We do not refill controlled medications. The doctor may request a photo of the medication label, bottle, or prescription snapshot for verification.</small>
+              </label>
+
+              <label class="full-width">
+                Proof of current medication use <span aria-hidden="true">*</span>
+                <input id="attachments" name="attachments" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" required>
+                <small>Upload a bottle snapshot, medication label, prescription snapshot, or other proof of current use.</small>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="notice-band warning">
+              We do not refill controlled drugs. Please provide accurate medication details and required proof so staff can process your request quickly.
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-heading-row">
+              <div>
+                <h2>Medication Refill Fee</h2>
+                <p class="category-label">$50 for up to 3 medications</p>
+              </div>
+              <div class="total-pill">
+                <span>Total</span>
+                <strong>$50.00 CAD</strong>
+              </div>
+            </div>
+
+            <div class="service-product-card">
+              <div>
+                <strong>Prescription Refill</strong>
+                <p>Request and receive your official prescription refill after your appointment.</p>
+              </div>
+              <span class="price">$50.00 CAD</span>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2>Payment Method</h2>
+            <div class="payment-methods">
+              <label class="radio-row">
+                <input type="radio" name="paymentMethod" value="square" checked required>
+                <span>Square secure checkout</span>
+              </label>
+              <p class="payment-note" id="paymentNote">Loading payment settings...</p>
+            </div>
+          </section>
+
+          <label class="consent-row">
+            <input type="checkbox" name="policyAcknowledged" required>
+            <span>To schedule or reschedule your appointment, I understand I should call 587-442-4898 or email booking@telepluscare.com. Missed appointments or no-shows without prior notice may result in a $40-$60 fee before rebooking.</span>
+          </label>
+
+          <div id="formMessage" class="form-message" role="status" aria-live="polite"></div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-button">Submit Request</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="clinic-panel" aria-labelledby="summary-title">
+        <div class="booking-snapshot" aria-label="Request summary">
+          <div class="snapshot-heading">
+            <span>Service</span>
+            <strong id="summary-title">Prescription Refill</strong>
+            <small>Up to 3 medications</small>
+          </div>
+          <div class="snapshot-row">
+            <span>Proof Required</span>
+            <strong>Bottle or label photo</strong>
+          </div>
+          <div class="snapshot-row">
+            <span>Total</span>
+            <strong>$50.00 CAD</strong>
+          </div>
+        </div>
+
+        <h2>Need Help?</h2>
+        <p>Call or email TelePlus Care if you need help completing this request.</p>
+        <div class="support-list">
+          <a href="tel:5874424898">587-442-4898</a>
+          <a href="mailto:booking@telepluscare.com">booking@telepluscare.com</a>
+          <a href="mailto:info@telepluscare.com">info@telepluscare.com</a>
+        </div>
+        <p class="medical-disclaimer">Medical Disclaimer: The information on this website is for general informational purposes only and does not constitute medical advice. If you are experiencing a medical emergency, call 911 immediately.</p>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <span>© Telepluscare 2026, All Rights Reserved</span>
+      <a href="https://telepluscare.com/privacy-policy/">Privacy Policy</a>
+      <a href="https://telepluscare.com/terms-of-service/">Terms of Service</a>
+      <a href="/admin">Admin</a>
+    </footer>
+
+    <script src="/header-nav.js" defer></script>
+    <script src="/form-draft.js" defer></script>
+    <script src="/service-request.js" defer></script>
+  </body>
+</html>

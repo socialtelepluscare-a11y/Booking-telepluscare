@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Payment Return | TelePlus Care</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="https://telepluscare.com/" aria-label="TelePlus Care home">
+        <img class="site-logo" src="/images/telepluscare-logo.webp" alt="TelePlus Care">
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="topNav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+      <nav id="topNav" class="top-nav" aria-label="Main navigation">
+        <a href="https://telepluscare.com/">Home</a>
+        <a href="https://telepluscare.com/#services">Services</a>
+        <a href="https://telepluscare.com/about/">About</a>
+        <a href="https://telepluscare.com/blog/">Blog</a>
+        <a href="https://telepluscare.com/faq/">FAQ</a>
+        <a href="https://telepluscare.com/contact-us/">Contact</a>
+      </nav>
+      <a class="header-phone" href="/">Book Your Appointment Now</a>
+    </header>
+
+    <main class="admin-layout">
+      <section class="booking-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Payment</p>
+            <h1>Thank You</h1>
+          </div>
+        </div>
+        <div class="form-section">
+          <h2>Your appointment request has been received.</h2>
+          <p id="referenceText" class="payment-note"></p>
+          <p class="payment-note">Square payment confirmation should be verified in your Square dashboard or by connecting Square webhooks to this booking system.</p>
+          <a class="primary-link-button" href="/">Book Another Appointment</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="/header-nav.js" defer></script>
+    <script>
+      const reference = new URLSearchParams(window.location.search).get("reference");
+      document.querySelector("#referenceText").textContent = reference
+        ? `Booking reference: ${reference}`
+        : "Please keep your Square receipt for your records.";
+    </script>
+  </body>
+</html>

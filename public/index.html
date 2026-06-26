@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Book Your Appointment | TelePlus Care</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="https://telepluscare.com/" aria-label="TelePlus Care home">
+        <img class="site-logo" src="/images/telepluscare-logo.webp" alt="TelePlus Care">
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="topNav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+      <nav id="topNav" class="top-nav" aria-label="Main navigation">
+        <a href="https://telepluscare.com/">Home</a>
+        <a href="https://telepluscare.com/#services">Services</a>
+        <a href="https://telepluscare.com/about/">About</a>
+        <a href="https://telepluscare.com/blog/">Blog</a>
+        <a href="https://telepluscare.com/faq/">FAQ</a>
+        <a href="https://telepluscare.com/contact-us/">Contact</a>
+      </nav>
+      <a class="header-phone" href="/">Book Your Appointment Now</a>
+    </header>
+
+    <main class="booking-layout">
+      <section class="booking-panel" aria-labelledby="booking-title">
+        <div class="panel-heading">
+          <div class="booking-title-copy">
+            <p class="eyebrow">Book Online</p>
+            <h1 id="booking-title">Book Your Appointment</h1>
+            <p class="booking-title-subcopy">Fill out the form below to book a virtual healthcare appointment with a licensed Alberta physician.</p>
+          </div>
+          <div class="clinic-badges" aria-label="Clinic highlights">
+            <span>Licensed Alberta Physicians</span>
+            <span>Same-Day Appointments</span>
+            <span>Virtual Doctor Visit</span>
+          </div>
+        </div>
+
+        <!-- Multi-step form container -->
+        <div class="multi-step-form">
+          <div class="step-progress">
+            <div class="step-indicator active" data-step="1">
+              <span class="step-number">1</span>
+              <span class="step-label">Personal Info</span>
+            </div>
+            <div class="step-indicator" data-step="2">
+              <span class="step-number">2</span>
+              <span class="step-label">Health Card</span>
+            </div>
+            <div class="step-indicator" data-step="3">
+              <span class="step-number">3</span>
+              <span class="step-label">Appointment</span>
+            </div>
+            <div class="step-indicator" data-step="4">
+              <span class="step-number">4</span>
+              <span class="step-label">Service</span>
+            </div>
+            <div class="step-indicator" data-step="5">
+              <span class="step-number">5</span>
+              <span class="step-label">Payment</span>
+            </div>
+          </div>
+
+          <form id="bookingForm" data-marketing-form-type="appointment" novalidate>
+            <input type="hidden" name="draftId">
+            
+            <!-- Step 1: Personal Information -->
+            <div class="form-step active" data-step="1">
+              <div class="form-progress-notice">
+                Fill out the form below to book your appointment. Your progress is saved automatically while you complete the page.
+              </div>
+              <section class="form-section">
+                <h2>Patient Details</h2>
+                <div class="form-grid">
+                  <label>
+                    TelePlus Care option <span aria-hidden="true">*</span>
+                    <select name="careOption" required>
+                      <option value="Virtual Doctor Visit">Virtual Doctor Visit</option>
+                      <option value="Canadian Out of Alberta">Canadian Out of Alberta</option>
+                      <option value="International Visitor to Canada">International Visitor to Canada</option>
+                      <option value="Doctor Note Online">Doctor Note Online</option>
+                      <option value="Prescription Refill Online">Prescription Refill Online</option>
+                      <option value="Mental Health Counselling Online">Mental Health Counselling Online</option>
+                      <option value="Weight Loss Online">Weight Loss Online</option>
+                      <option value="Men's Sexual Health Online">Men's Sexual Health Online</option>
+                      <option value="Women's Sexual Health Online">Women's Sexual Health Online</option>
+                      <option value="Skin / Acne Care Online">Skin / Acne Care Online</option>
+                      <option value="Hair Loss Treatment Online">Hair Loss Treatment Online</option>
+                      <option value="TRT/HRT Wellness">TRT/HRT Wellness</option>
+                      <option value="General Medical Care">General Medical Care</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Gender <span aria-hidden="true">*</span>
+                    <select name="gender" required>
+                      <option value="">Please Select</option>
+                      <option>Female</option>
+                      <option>Male</option>
+                      <option>Non-binary</option>
+                      <option>Prefer not to say</option>
+                      <option>Other</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    First Name <span aria-hidden="true">*</span>
+                    <input name="firstName" autocomplete="given-name" required>
+                  </label>
+
+                  <label>
+                    Last Name <span aria-hidden="true">*</span>
+                    <input name="lastName" autocomplete="family-name" required>
+                  </label>
+
+                  <label>
+                    Date of Birth <span aria-hidden="true">*</span>
+                    <span class="date-entry">
+                      <input id="dateOfBirth" name="dateOfBirth" type="text" inputmode="numeric" autocomplete="bday" placeholder="MM-DD-YYYY" pattern="\d{2}-\d{2}-\d{4}" maxlength="10" required>
+                      <input id="dateOfBirthPicker" class="date-picker-input" type="date" aria-label="Select date of birth from calendar">
+                    </span>
+                    <small class="field-hint">Type MM-DD-YYYY or select from the calendar.</small>
+                  </label>
+
+                  <label>
+                    Phone Number <span aria-hidden="true">*</span>
+                    <input name="phone" type="tel" autocomplete="tel" placeholder="(000) 000-0000" required>
+                  </label>
+
+                  <label class="full-width">
+                    Email <span aria-hidden="true">*</span>
+                    <input name="email" type="email" autocomplete="email" placeholder="myname@example.com" required>
+                  </label>
+                </div>
+              </section>
+
+              <section class="form-section">
+                <h2>Address</h2>
+                <div class="form-grid">
+                  <label class="full-width">
+                    Street Address <span aria-hidden="true">*</span>
+                    <input name="streetAddress" autocomplete="street-address" required>
+                  </label>
+
+                  <label>
+                    City <span aria-hidden="true">*</span>
+                    <input name="city" autocomplete="address-level2" required>
+                  </label>
+
+                  <label>
+                    State / Province <span aria-hidden="true">*</span>
+                    <input name="province" autocomplete="address-level1" required>
+                  </label>
+
+                  <label>
+                    Postal / Zip Code <span aria-hidden="true">*</span>
+                    <input name="postalCode" autocomplete="postal-code" required>
+                  </label>
+
+                  <label>
+                    Preferred Way Of Reminder <span aria-hidden="true">*</span>
+                    <select name="reminderPreference" required>
+                      <option value="">Please Select</option>
+                      <option>Email</option>
+                      <option>Text Message</option>
+                      <option>Phone Call</option>
+                      <option>Email and Text Message</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
+
+              <div class="form-actions">
+                <button type="button" class="primary-button" id="step1-next">Continue to Health Card</button>
+              </div>
+            </div>
+
+            <!-- Step 2: Health Card Information -->
+            <div class="form-step" data-step="2">
+              <section class="form-section">
+                <h2>Alberta Health Card</h2>
+                <div class="form-grid">
+                  <label>
+                    Do you have active Alberta Health Card (PHN)? <span aria-hidden="true">*</span>
+                    <select name="activeHealthCard" id="activeHealthCard" required>
+                      <option value="">Please Select</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </label>
+
+                  <label id="phnField">
+                    Enter Alberta Health Card (PHN) <span aria-hidden="true">*</span>
+                    <input name="phn" id="phn" inputmode="numeric" maxlength="11" placeholder="000000000">
+                  </label>
+                </div>
+              </section>
+
+              <div class="form-actions">
+                <button type="button" class="secondary-button" id="step2-prev">Back</button>
+                <button type="button" class="primary-button" id="step2-next">Continue to Appointment</button>
+              </div>
+            </div>
+
+            <!-- Step 3: Appointment Selection -->
+            <div class="form-step" data-step="3">
+              <section class="form-section">
+                <div class="form-field visit-reason-field">
+                  <label for="visitReason">Reason for visit <span class="required-asterisk" aria-hidden="true">*</span></label>
+                  <textarea
+                    id="visitReason"
+                    name="visitReason"
+                    rows="3"
+                    maxlength="1000"
+                    required
+                    placeholder="Briefly describe the reason for your visit so our care team can prepare (e.g. prescription renewal, cold/flu symptoms, follow-up)."
+                  ></textarea>
+                  <small class="field-helper">This helps us prepare for your appointment. Please don't include sensitive details you'd rather share privately.</small>
+                </div>
+              </section>
+
+              <section class="form-section">
+                <div class="section-heading-row">
+                  <h2>Preferred Appointment Date</h2>
+                  <span id="clinicClock" class="timezone-pill">America/Edmonton</span>
+                </div>
+
+                <input type="hidden" name="appointmentDate" id="appointmentDate" required>
+                <input type="hidden" name="appointmentTime" id="appointmentTime" required>
+
+                <div class="appointment-grid">
+                  <div class="calendar" aria-label="Appointment calendar">
+                    <div class="calendar-toolbar">
+                      <button type="button" class="icon-button" id="previousMonth" aria-label="Previous month"><</button>
+                      <strong id="calendarMonth"></strong>
+                      <button type="button" class="icon-button" id="nextMonth" aria-label="Next month">></button>
+                    </div>
+                    <div class="weekday-row" aria-hidden="true">
+                      <span>MON</span>
+                      <span>TUE</span>
+                      <span>WED</span>
+                      <span>THU</span>
+                      <span>FRI</span>
+                      <span>SAT</span>
+                      <span>SUN</span>
+                    </div>
+                    <div id="calendarDays" class="calendar-days"></div>
+                  </div>
+
+                  <div class="time-panel">
+                    <h3 id="selectedDateLabel">Select a date</h3>
+                    <div id="slotGrid" class="slot-grid" aria-live="polite"></div>
+                  </div>
+                </div>
+
+                <div id="outOfProvinceNotice" class="out-of-province-notice" hidden>
+                  <strong>We'll arrange your appointment time</strong>
+                  <p>Because your province is outside Alberta, you don't need to pick a time here. TelePlus Care is open Monday to Friday, 9:00 AM&ndash;5:00 PM. After you submit, our team will contact you within a <strong>3-hour window</strong> to confirm your appointment time.</p>
+                </div>
+              </section>
+
+              <div class="form-actions">
+                <button type="button" class="secondary-button" id="step3-prev">Back</button>
+                <button type="button" class="primary-button" id="step3-next">Continue to Service</button>
+              </div>
+            </div>
+
+            <!-- Step 4: Service Selection -->
+            <div class="form-step" data-step="4">
+              <section class="form-section" id="productsSection">
+                <div class="section-heading-row">
+                  <div>
+                    <h2>Selected Service</h2>
+                    <p class="category-label">Matched to your TelePlus Care option</p>
+                  </div>
+                  <div class="total-pill">
+                    <span>Total</span>
+                    <strong id="totalAmount">$0.00 CAD</strong>
+                  </div>
+                </div>
+                <p id="productGuide" class="section-helper">
+                  Answer the Alberta Health Card question above and we will show only the matching TelePlus Care service/payment option.
+                </p>
+                <div id="productList" class="product-list" aria-live="polite"></div>
+              </section>
+
+              <section class="form-section" id="serviceDetailsSection" hidden>
+                <div class="section-heading-row">
+                  <div>
+                    <h2>Service Details</h2>
+                    <p class="category-label">Required for the selected service</p>
+                  </div>
+                </div>
+                <div id="serviceDetailsFields" class="form-grid"></div>
+              </section>
+
+              <div class="form-actions">
+                <button type="button" class="secondary-button" id="step4-prev">Back</button>
+                <button type="button" class="primary-button" id="step4-next">Continue to Payment</button>
+              </div>
+            </div>
+
+            <!-- Step 5: Payment and Confirmation -->
+            <div class="form-step" data-step="5">
+              <section class="form-section" id="paymentSection">
+                <h2>Payment Methods</h2>
+                <div class="payment-methods">
+                  <label class="radio-row">
+                    <input type="radio" name="paymentMethod" value="square" checked required>
+                    <span>Square secure checkout</span>
+                  </label>
+                  <p class="payment-note" id="paymentNote">Paid bookings will continue to Square secure checkout when Square credentials are configured.</p>
+                </div>
+              </section>
+
+              <label class="consent-row">
+                <input type="checkbox" name="consentAcknowledged" required>
+                <span>I confirm this is not a medical emergency, and I consent to be contacted about this appointment.</span>
+              </label>
+
+              <div id="formMessage" class="form-message" role="status" aria-live="polite"></div>
+
+              <div class="form-actions">
+                <button type="button" class="secondary-button" id="step5-prev">Back</button>
+                <button type="submit" class="primary-button">Confirm Booking</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <aside class="clinic-panel" aria-labelledby="clinic-title">
+        <div class="booking-snapshot" aria-label="Booking summary">
+          <div class="snapshot-heading">
+            <span>Appointment</span>
+            <strong id="snapshotDate">Select a date</strong>
+            <small id="snapshotTime">Choose a time</small>
+          </div>
+          <div class="snapshot-row">
+            <span>Service</span>
+            <strong id="snapshotService">None selected</strong>
+          </div>
+          <div class="snapshot-row">
+            <span>Total</span>
+            <strong id="snapshotTotal">$0.00 CAD</strong>
+          </div>
+        </div>
+
+        <div class="clinic-info">
+          <header class="clinic-info-head">
+            <h2 id="clinic-title">Visit Our Clinic</h2>
+            <p>Find us in Edmonton, Alberta</p>
+          </header>
+
+          <div class="clinic-card clinic-location">
+            <div class="clinic-map" role="img" aria-label="TelePlus Care clinic location">
+              <div class="clinic-map-overlay">
+                <strong>TelePlus Care</strong>
+                <span class="clinic-rating">★ 4.9 · Medical Clinic</span>
+              </div>
+            </div>
+            <div class="clinic-location-body">
+              <address>17803 65 St NW<br>Edmonton, AB T5Z 3K6</address>
+              <a class="clinic-directions" href="https://maps.google.com/?q=17803+65+St+NW+Edmonton+AB+T5Z+3K6" target="_blank" rel="noreferrer">Get Directions →</a>
+            </div>
+          </div>
+
+          <div class="clinic-cards-grid">
+            <div class="clinic-card">
+              <h3>Support</h3>
+              <ul class="clinic-contact">
+                <li><span class="clinic-contact-label">Toll-free</span><a href="tel:18884622755">1-(888)-462-2755</a></li>
+                <li><span class="clinic-contact-label">Local</span><a href="tel:5874424898">587-442-4898</a></li>
+                <li><span class="clinic-contact-label">Bookings</span><a href="mailto:booking@telepluscare.com">booking@telepluscare.com</a></li>
+                <li><span class="clinic-contact-label">General</span><a href="mailto:info@telepluscare.com">info@telepluscare.com</a></li>
+              </ul>
+            </div>
+
+            <div class="clinic-card">
+              <h3>Clinic Hours</h3>
+              <dl class="clinic-hours">
+                <div><dt>Mon&ndash;Fri</dt><dd>9:00 AM &ndash; 6:00 PM</dd></div>
+                <div><dt>Saturday</dt><dd>10:00 AM &ndash; 4:00 PM</dd></div>
+                <div class="clinic-hours-closed"><dt>Sunday</dt><dd>Closed</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <p class="medical-disclaimer"><strong>Medical Disclaimer:</strong> The information on this website is for general informational purposes only and does not constitute medical advice. If you are experiencing a medical emergency, call <a href="tel:911">911</a> immediately.</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <span>© Telepluscare 2026, All Rights Reserved</span>
+      <a href="/doctor-note">Doctor Note</a>
+      <a href="/prescription-refill">Prescription Refill</a>
+      <a href="https://telepluscare.com/privacy-policy/">Privacy Policy</a>
+      <a href="https://telepluscare.com/terms-of-service/">Terms of Service</a>
+      <a href="/admin">Admin</a>
+    </footer>
+
+    <script src="/header-nav.js" defer></script>
+    <script src="/form-draft.js" defer></script>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

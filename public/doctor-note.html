@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Doctor Note Request | TelePlus Care</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="https://telepluscare.com/" aria-label="TelePlus Care home">
+        <img class="site-logo" src="/images/telepluscare-logo.webp" alt="TelePlus Care">
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="topNav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+      <nav id="topNav" class="top-nav" aria-label="Main navigation">
+        <a href="https://telepluscare.com/">Home</a>
+        <a href="https://telepluscare.com/#services">Services</a>
+        <a href="https://telepluscare.com/about/">About</a>
+        <a href="https://telepluscare.com/blog/">Blog</a>
+        <a href="https://telepluscare.com/faq/">FAQ</a>
+        <a href="https://telepluscare.com/contact-us/">Contact</a>
+      </nav>
+      <a class="header-phone" href="/">Book Your Appointment Now</a>
+    </header>
+
+    <main class="booking-layout">
+      <section class="booking-panel" aria-labelledby="request-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Book Online</p>
+            <h1 id="request-title">Doctor Note Request</h1>
+          </div>
+          <div class="clinic-badges" aria-label="Request highlights">
+            <span>Issued within 3 hours</span>
+            <span>Working hours 9AM-5PM</span>
+            <span>Secure Square payment</span>
+          </div>
+        </div>
+
+        <form id="serviceRequestForm" data-marketing-form-type="doctor_note" data-submit-label="Submit Request" enctype="multipart/form-data" novalidate>
+          <input type="hidden" name="draftId">
+          <input type="hidden" name="requestType" value="doctor_note">
+          <div class="form-progress-notice">
+            Form progress may be saved securely so our team can help if you do not finish this request. Card details are never collected on this form.
+          </div>
+
+          <section class="form-section request-intro">
+            <h2>Doctor Note Appointment and Information Form</h2>
+            <p>Please fill out your details and appointment information to receive your doctor note promptly.</p>
+            <p><strong>Important:</strong> The doctor note date range must not exceed 7 days. Please mention the dates clearly, for example: January 1 to January 3, 2026.</p>
+          </section>
+
+          <section class="form-section">
+            <h2>Patient Details</h2>
+            <div class="form-grid">
+              <label>
+                First Name <span aria-hidden="true">*</span>
+                <input name="firstName" autocomplete="given-name" required>
+              </label>
+
+              <label>
+                Last Name <span aria-hidden="true">*</span>
+                <input name="lastName" autocomplete="family-name" required>
+              </label>
+
+              <label>
+                Phone <span aria-hidden="true">*</span>
+                <input name="phone" type="tel" autocomplete="tel" placeholder="(000) 000-0000" required>
+                <small>Please enter a valid phone number. Format: (000) 000-0000.</small>
+              </label>
+
+              <label>
+                Email <span aria-hidden="true">*</span>
+                <input name="email" type="email" autocomplete="email" placeholder="example@example.com" required>
+              </label>
+
+              <label class="full-width">
+                Street Address <span aria-hidden="true">*</span>
+                <input name="streetAddress" autocomplete="street-address" required>
+              </label>
+
+              <label>
+                City <span aria-hidden="true">*</span>
+                <input name="city" autocomplete="address-level2" required>
+              </label>
+
+              <label>
+                State / Province <span aria-hidden="true">*</span>
+                <input name="province" autocomplete="address-level1" required>
+              </label>
+
+              <label>
+                Postal / Zip Code <span aria-hidden="true">*</span>
+                <input name="postalCode" autocomplete="postal-code" required>
+              </label>
+
+              <label>
+                Date of Birth <span aria-hidden="true">*</span>
+                <input name="dateOfBirth" inputmode="numeric" placeholder="MM-DD-YYYY" pattern="\d{2}-\d{2}-\d{4}" required>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2>Doctor Note Details</h2>
+            <div class="form-grid">
+              <label class="full-width">
+                Reason for Doctor Note <span aria-hidden="true">*</span>
+                <textarea id="reason" name="reason" maxlength="150" rows="4" required></textarea>
+                <small><span id="reasonCount">0/150</span></small>
+              </label>
+
+              <label>
+                Doctor note start date <span aria-hidden="true">*</span>
+                <input id="noteStartDate" name="noteStartDate" inputmode="numeric" placeholder="MM-DD-YYYY" pattern="\d{2}-\d{2}-\d{4}" required>
+              </label>
+
+              <label>
+                Doctor note end date <span aria-hidden="true">*</span>
+                <input id="noteEndDate" name="noteEndDate" inputmode="numeric" placeholder="MM-DD-YYYY" pattern="\d{2}-\d{2}-\d{4}" required>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2>Important Information</h2>
+            <div class="notice-band">
+              Doctor's notes will be issued within 3 hours after your appointment. Please ensure all information provided is accurate for timely processing. Working hours: 9AM to 5PM.
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-heading-row">
+              <div>
+                <h2>Doctor Note Request Payment</h2>
+                <p class="category-label">Doctor Note Service</p>
+              </div>
+              <div class="total-pill">
+                <span>Total</span>
+                <strong>$45.00 CAD</strong>
+              </div>
+            </div>
+
+            <div class="service-product-card">
+              <div>
+                <strong>Doctor Note Service</strong>
+                <p>Request and receive your official doctor note after your appointment.</p>
+              </div>
+              <span class="price">$45.00 CAD</span>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2>Payment Method</h2>
+            <div class="payment-methods">
+              <label class="radio-row">
+                <input type="radio" name="paymentMethod" value="square" checked required>
+                <span>Square secure checkout</span>
+              </label>
+              <p class="payment-note" id="paymentNote">Loading payment settings...</p>
+            </div>
+          </section>
+
+          <label class="consent-row">
+            <input type="checkbox" name="policyAcknowledged" required>
+            <span>I have read and agree to the refund, cancellation, rescheduling, and no-show policy (shown below).</span>
+          </label>
+
+          <div id="formMessage" class="form-message" role="status" aria-live="polite"></div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-button">Submit Request</button>
+          </div>
+
+          <section class="form-section policy-section">
+            <h2>Refund, Cancellation, and Rescheduling Policy</h2>
+            <div class="policy-grid">
+              <div class="policy-card">
+                <strong>After your visit</strong>
+                <p>If you have visited us online or in-clinic, there is no refund. The visit itself is the service you paid for, and the fee fully covers that consultation once it has taken place.</p>
+              </div>
+              <div class="policy-card">
+                <strong>Refund requests before the visit</strong>
+                <p>For approved refunds before the visit has taken place, $20 will be deducted for administration and payment gateway charges.</p>
+              </div>
+              <div class="policy-card">
+                <strong>Changes or cancellations</strong>
+                <p>To schedule, reschedule, or cancel your appointment, please call <a href="tel:5874424898">587-442-4898</a> or email <a href="mailto:booking@telepluscare.com">booking@telepluscare.com</a>. Please tell us as early as possible so we can respect our doctors' time.</p>
+              </div>
+              <div class="policy-card">
+                <strong>Missed appointments</strong>
+                <p>Please avoid last-minute cancellations or rescheduling requests. Missed appointments or no-shows without prior notice may result in a $40-$60 fee before rebooking.</p>
+              </div>
+            </div>
+          </section>
+        </form>
+      </section>
+
+      <aside class="clinic-panel" aria-labelledby="summary-title">
+        <div class="booking-snapshot" aria-label="Request summary">
+          <div class="snapshot-heading">
+            <span>Service</span>
+            <strong id="summary-title">Doctor Note</strong>
+            <small>Official note request</small>
+          </div>
+          <div class="snapshot-row">
+            <span>Refund Admin Fee</span>
+            <strong>$20.00</strong>
+          </div>
+          <div class="snapshot-row">
+            <span>Total</span>
+            <strong>$45.00 CAD</strong>
+          </div>
+        </div>
+
+        <h2>Need Help?</h2>
+        <p>Call or email TelePlus Care if you need help completing this request.</p>
+        <div class="support-list">
+          <a href="tel:5874424898">587-442-4898</a>
+          <a href="mailto:booking@telepluscare.com">booking@telepluscare.com</a>
+          <a href="mailto:info@telepluscare.com">info@telepluscare.com</a>
+        </div>
+        <p class="medical-disclaimer">Medical Disclaimer: The information on this website is for general informational purposes only and does not constitute medical advice. If you are experiencing a medical emergency, call 911 immediately.</p>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <span>© Telepluscare 2026, All Rights Reserved</span>
+      <a href="https://telepluscare.com/privacy-policy/">Privacy Policy</a>
+      <a href="https://telepluscare.com/terms-of-service/">Terms of Service</a>
+      <a href="/admin">Admin</a>
+    </footer>
+
+    <script src="/header-nav.js" defer></script>
+    <script src="/form-draft.js" defer></script>
+    <script src="/service-request.js" defer></script>
+  </body>
+</html>

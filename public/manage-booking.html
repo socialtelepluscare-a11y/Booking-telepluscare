@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Booking | TelePlus Care</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="https://telepluscare.com/" aria-label="TelePlus Care home">
+        <img class="site-logo" src="/images/telepluscare-logo.webp" alt="TelePlus Care">
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="topNav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+      <nav id="topNav" class="top-nav" aria-label="Main navigation">
+        <a href="https://telepluscare.com/">Home</a>
+        <a href="https://telepluscare.com/#services">Services</a>
+        <a href="https://telepluscare.com/about/">About</a>
+        <a href="https://telepluscare.com/blog/">Blog</a>
+        <a href="https://telepluscare.com/faq/">FAQ</a>
+        <a href="https://telepluscare.com/contact-us/">Contact</a>
+      </nav>
+      <a class="header-phone" href="/">Book Your Appointment Now</a>
+    </header>
+
+    <main class="admin-layout">
+      <section class="booking-panel" aria-labelledby="manage-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">TelePlus Care</p>
+            <h1 id="manage-title">Manage Booking</h1>
+          </div>
+          <div class="clinic-badges" id="bookingStatus"></div>
+        </div>
+
+        <div id="manageMessage" class="form-message" role="status" aria-live="polite"></div>
+
+        <section class="form-section manage-summary" id="bookingSummary"></section>
+
+        <section class="form-section" id="attachmentSection">
+          <h2>Intake Attachments</h2>
+          <div id="attachmentList" class="attachment-list"></div>
+          <form id="attachmentForm" class="attachment-form">
+            <label>
+              Upload files
+              <input id="attachmentInput" name="attachments" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
+            </label>
+            <button type="submit" class="secondary-button">Upload Attachments</button>
+          </form>
+        </section>
+
+        <section class="form-section" id="rescheduleSection">
+          <div class="section-heading-row">
+            <h2>Change Appointment Time</h2>
+            <span id="manageClock" class="timezone-pill">America/Edmonton</span>
+          </div>
+
+          <div class="appointment-grid">
+            <div class="calendar" aria-label="Appointment calendar">
+              <div class="calendar-toolbar">
+                <button type="button" class="icon-button" id="previousMonth" aria-label="Previous month">&lt;</button>
+                <strong id="calendarMonth"></strong>
+                <button type="button" class="icon-button" id="nextMonth" aria-label="Next month">&gt;</button>
+              </div>
+              <div class="weekday-row" aria-hidden="true">
+                <span>MON</span>
+                <span>TUE</span>
+                <span>WED</span>
+                <span>THU</span>
+                <span>FRI</span>
+                <span>SAT</span>
+                <span>SUN</span>
+              </div>
+              <div id="calendarDays" class="calendar-days"></div>
+            </div>
+
+            <div class="time-panel">
+              <h3 id="selectedDateLabel">Select a date</h3>
+              <div id="slotGrid" class="slot-grid" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="form-actions manage-actions">
+            <button type="button" class="primary-button" id="rescheduleButton" disabled>Save New Time</button>
+          </div>
+        </section>
+
+        <section class="form-section" id="cancelSection">
+          <h2>Cancel Booking</h2>
+          <p class="payment-note">Cancelling here removes your appointment time. If you already paid through Square, TelePlus Care will still need to review the payment/refund in Square.</p>
+          <button type="button" class="danger-button" id="cancelButton">Cancel Appointment</button>
+        </section>
+      </section>
+    </main>
+
+    <script src="/header-nav.js" defer></script>
+    <script src="/manage-booking.js" defer></script>
+  </body>
+</html>
