@@ -222,7 +222,10 @@ const BRAND = {
   danger: "#c0392b",
   phone: "587-442-4898",
   email: "booking@telepluscare.com",
-  logoUrl: `${(process.env.APP_BASE_URL || "").replace(/\/$/, "")}/images/telepluscare-logo.webp`
+  // Email images must load from a PUBLIC url (a recipient's inbox can't reach
+  // localhost). Prefer EMAIL_LOGO_URL; fall back to the app's own /images path.
+  logoUrl: process.env.EMAIL_LOGO_URL
+    || `${(process.env.APP_BASE_URL || "").replace(/\/$/, "")}/images/telepluscare-logo.webp`
 };
 
 function formatLongDate(isoDate) {
@@ -253,6 +256,83 @@ function paymentLabel(status) {
 
 function totalLabel(totalCents) {
   return totalCents > 0 ? `${formatCad(totalCents)} CAD` : "No charge";
+}
+
+function titleCase(value) {
+  const text = toText(value);
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+function fullAddressLine(booking) {
+  return [booking.streetAddress, booking.city, booking.province, booking.postalCode]
+    .map((part) => toText(part))
+    .filter(Boolean)
+    .join(", ");
+}
+
+function healthCardValue(booking) {
+  const raw = toText(booking.activeHealthCard).toLowerCase();
+  const isYes = ["yes", "true", "1", "y"].includes(raw);
+  if (isYes) {
+    return booking.phn ? `Yes (PHN ${toText(booking.phn)})` : "Yes";
+  }
+  return raw ? titleCase(toText(booking.activeHealthCard)) : "Not provided";
+}
+
+function appointmentWhenText(booking) {
+  return (!booking.appointmentDate || !booking.appointmentTime)
+    ? "Our team will contact you within 3 hours (open 9 AM-5 PM) to arrange the time"
+    : `${booking.appointmentDate} at ${booking.appointmentTime} (${booking.timezone})`;
+}
+
+// Every field captured on the booking form — shared by the patient confirmation
+// and the staff notification so both show the complete record.
+function bookingDetailRows(booking) {
+  const whenRow = (!booking.appointmentDate || !booking.appointmentTime)
+    ? ["When", "Our team will contact you within <strong>3 hours</strong> (open 9 AM&ndash;5 PM) to arrange the time."]
+    : ["When", `${escapeHtml(formatLongDate(booking.appointmentDate))}<br>${escapeHtml(booking.appointmentTime)} &middot; ${escapeHtml(booking.timezone)}`];
+
+  return [
+    booking.careOption ? ["Appointment type", escapeHtml(booking.careOption)] : null,
+    ["Patient", escapeHtml(`${booking.firstName} ${booking.lastName}`)],
+    booking.gender ? ["Gender", escapeHtml(titleCase(booking.gender))] : null,
+    booking.dateOfBirth ? ["Date of birth", escapeHtml(booking.dateOfBirth)] : null,
+    ["Phone", escapeHtml(booking.phone)],
+    ["Email", `<a href="mailto:${escapeHtml(booking.email)}" style="color:${BRAND.accent}; text-decoration:none;">${escapeHtml(booking.email)}</a>`],
+    fullAddressLine(booking) ? ["Address", escapeHtml(fullAddressLine(booking))] : null,
+    booking.reminderPreference ? ["Reminder by", escapeHtml(titleCase(booking.reminderPreference))] : null,
+    ["Alberta Health Card", escapeHtml(healthCardValue(booking))],
+    whenRow,
+    ["Service", escapeHtml(productLines(booking))],
+    ["Total", escapeHtml(totalLabel(booking.totalCents))],
+    booking.paymentStatus === "not_required" ? null : ["Payment", escapeHtml(paymentLabel(booking.paymentStatus))],
+    booking.visitReason ? ["Reason for visit", paragraphHtml(booking.visitReason)] : null,
+    ["Reference", escapeHtml(booking.reference)]
+  ].filter(Boolean);
+}
+
+// Plain-text equivalent of bookingDetailRows for the text/multipart body.
+function bookingDetailText(booking) {
+  const lines = [];
+  if (booking.careOption) lines.push(`Appointment type: ${booking.careOption}`);
+  lines.push(`Patient: ${booking.firstName} ${booking.lastName}`);
+  if (booking.gender) lines.push(`Gender: ${titleCase(booking.gender)}`);
+  if (booking.dateOfBirth) lines.push(`Date of birth: ${booking.dateOfBirth}`);
+  lines.push(`Phone: ${booking.phone}`);
+  lines.push(`Email: ${booking.email}`);
+  const address = fullAddressLine(booking);
+  if (address) lines.push(`Address: ${address}`);
+  if (booking.reminderPreference) lines.push(`Reminder by: ${titleCase(booking.reminderPreference)}`);
+  lines.push(`Alberta Health Card: ${healthCardValue(booking)}`);
+  lines.push(`Appointment: ${appointmentWhenText(booking)}`);
+  lines.push(`Service: ${productLines(booking)}`);
+  lines.push(`Total: ${totalLabel(booking.totalCents)}`);
+  if (booking.paymentStatus !== "not_required") {
+    lines.push(`Payment: ${paymentLabel(booking.paymentStatus)}`);
+  }
+  if (booking.visitReason) lines.push(`Reason for visit: ${booking.visitReason}`);
+  lines.push(`Reference: ${booking.reference}`);
+  return lines.join("\n");
 }
 
 // One reusable, mobile-friendly, table-based shell so every email looks the same.
@@ -364,25 +444,15 @@ function buildEmailContent(booking, manageUrl, settings = getEmailSettings()) {
   const values = { ...bookingTemplateValues(booking, manageUrl), refundPolicyUrl };
   const intro = replaceTokens(settings.appointmentIntro, values);
   const needsScheduling = !booking.appointmentDate || !booking.appointmentTime;
-  const patientName = `${booking.firstName} ${booking.lastName}`;
   const paymentLine = booking.squarePaymentLinkUrl
     ? `\nPay securely with Square: ${booking.squarePaymentLinkUrl}\n`
     : "";
-
-  const whenLine = needsScheduling
-    ? "Appointment time: our team will contact you within 3 hours (open 9 AM-5 PM) to arrange it."
-    : `Appointment: ${booking.appointmentDate} at ${booking.appointmentTime} (${booking.timezone})`;
 
   const text = `Hi ${booking.firstName},
 
 ${intro}
 
-Patient: ${patientName}
-Reference: ${booking.reference}
-${whenLine}
-Service: ${productLines(booking)}
-Total: ${formatCad(booking.totalCents)} CAD
-Payment status: ${paymentLabel(booking.paymentStatus)}
+${bookingDetailText(booking)}
 ${paymentLine}
 Change your appointment time or cancel (no login needed):
 ${changeUrl || manageUrl}
@@ -401,24 +471,13 @@ TelePlus Care`;
     ? `<p style="margin:12px 0 0; font-size:13px; line-height:1.5; color:${BRAND.muted};">Please review our <a href="${escapeHtml(refundPolicyUrl)}" style="color:${BRAND.accent}; text-decoration:underline;">refund &amp; cancellation policy</a> before your visit.</p>`
     : "";
 
-  const whenRow = needsScheduling
-    ? ["When", `Our team will contact you within <strong>3 hours</strong> (open 9 AM&ndash;5 PM) to arrange your appointment time.`]
-    : ["When", `${escapeHtml(formatLongDate(booking.appointmentDate))}<br>${escapeHtml(booking.appointmentTime)} &middot; ${escapeHtml(booking.timezone)}`];
-
   const html = emailLayout({
     heading: needsScheduling ? "Request received — we'll call you" : "Appointment request received",
     preheader: needsScheduling ? "We'll contact you within 3 hours to set your time." : `${formatLongDate(booking.appointmentDate)} at ${booking.appointmentTime}`,
     bodyHtml: `
       ${greetingHtml(booking.firstName)}
       ${leadParagraph(intro)}
-      ${detailTable([
-        ["Patient", escapeHtml(patientName)],
-        whenRow,
-        ["Service", escapeHtml(productLines(booking))],
-        ["Total", escapeHtml(totalLabel(booking.totalCents))],
-        booking.paymentStatus === "not_required" ? null : ["Payment", escapeHtml(paymentLabel(booking.paymentStatus))],
-        ["Reference", escapeHtml(booking.reference)]
-      ])}
+      ${detailTable(bookingDetailRows(booking))}
       ${buttonStack(buttons)}
       <p style="margin:14px 0 0; font-size:13px; line-height:1.5; color:${BRAND.muted};">The button above opens your private booking page &mdash; change your time or cancel, no login needed. Please don't forward this link to anyone else.</p>
       ${refundLineHtml}
@@ -750,32 +809,14 @@ async function sendBookingAdminNotification(booking, manageUrl) {
   const subject = replaceTokens(settings.adminBookingSubject, values);
   const text = `New TelePlus Care booking
 
-Reference: ${booking.reference}
-Patient: ${values.patientName}
-Phone: ${booking.phone}
-Email: ${booking.email}
-Appointment: ${booking.appointmentDate} at ${booking.appointmentTime} (${booking.timezone})
-Service: ${values.service}
-Total: ${values.total}
-Payment status: ${booking.paymentStatus}
+${bookingDetailText(booking)}
 Manage link: ${manageUrl}`;
   const html = emailLayout({
     heading: "New booking received",
     preheader: `${values.patientName} — ${formatLongDate(booking.appointmentDate)} ${booking.appointmentTime}`,
     bodyHtml: `
       ${leadParagraph(`A new booking just came in for ${values.patientName}.`)}
-      ${detailTable([
-        ["Patient", escapeHtml(values.patientName)],
-        ["Phone", escapeHtml(booking.phone)],
-        ["Email", `<a href="mailto:${escapeHtml(booking.email)}" style="color:${BRAND.accent};">${escapeHtml(booking.email)}</a>`],
-        booking.appointmentDate && booking.appointmentTime
-          ? ["When", `${escapeHtml(formatLongDate(booking.appointmentDate))}<br>${escapeHtml(booking.appointmentTime)} &middot; ${escapeHtml(booking.timezone)}`]
-          : ["When", "Not yet scheduled — callback request (contact within 3 hours)"],
-        ["Service", escapeHtml(values.service)],
-        ["Total", escapeHtml(values.total)],
-        ["Payment", escapeHtml(paymentLabel(booking.paymentStatus))],
-        ["Reference", escapeHtml(booking.reference)]
-      ])}
+      ${detailTable(bookingDetailRows(booking))}
       ${buttonStack(emailButton("Open manage link", manageUrl, "secondary"))}
     `
   });
@@ -846,6 +887,66 @@ Payment status: ${serviceRequest.paymentStatus}${dateRange}`;
   return { sent: true };
 }
 
+// Shared staff/doctor notification for booking lifecycle events (reschedule,
+// cancellation) — always includes the full booking record.
+async function sendBookingStaffEventNotification(booking, { subject, heading, intro }) {
+  const settings = getEmailSettings();
+  const recipients = splitEmails(settings.adminNotificationEmails);
+  if (!settings.adminNotificationsEnabled || recipients.length === 0) {
+    return { sent: false, reason: "admin_notifications_disabled" };
+  }
+  if (!isEmailConfigured(settings)) {
+    return { sent: false, reason: "email_not_configured" };
+  }
+
+  const text = `${intro}
+
+${bookingDetailText(booking)}`;
+  const html = emailLayout({
+    heading,
+    preheader: intro,
+    bodyHtml: `
+      ${leadParagraph(intro)}
+      ${detailTable(bookingDetailRows(booking))}
+    `
+  });
+
+  await createTransporter(settings).sendMail({
+    ...mailSender(settings),
+    to: recipients.join(", "),
+    subject,
+    text,
+    html
+  });
+
+  return { sent: true };
+}
+
+async function sendBookingRescheduleAdminNotification(booking, previous = {}) {
+  const fromWhen = previous.fromDate && previous.fromTime
+    ? `${formatLongDate(previous.fromDate)} at ${previous.fromTime}`
+    : "an earlier time";
+  const newWhen = booking.appointmentDate && booking.appointmentTime
+    ? `${formatLongDate(booking.appointmentDate)} at ${booking.appointmentTime}`
+    : "a new time";
+  return sendBookingStaffEventNotification(booking, {
+    subject: `Booking RESCHEDULED: ${booking.reference} - ${booking.firstName} ${booking.lastName}`,
+    heading: "A patient rescheduled their appointment",
+    intro: `${booking.firstName} ${booking.lastName} moved their appointment from ${fromWhen} to ${newWhen}. Full booking details below.`
+  });
+}
+
+async function sendBookingCancellationAdminNotification(booking) {
+  const when = booking.appointmentDate && booking.appointmentTime
+    ? `${formatLongDate(booking.appointmentDate)} at ${booking.appointmentTime}`
+    : "their requested time";
+  return sendBookingStaffEventNotification(booking, {
+    subject: `Booking CANCELLED: ${booking.reference} - ${booking.firstName} ${booking.lastName}`,
+    heading: "A patient cancelled their appointment",
+    intro: `${booking.firstName} ${booking.lastName} cancelled their appointment (${when}). Full booking details below.`
+  });
+}
+
 async function sendTestEmail(to) {
   const settings = getEmailSettings();
   if (!isEmailConfigured(settings)) {
@@ -876,7 +977,9 @@ module.exports = {
   sendAppointmentReminder,
   sendBookingAdminNotification,
   sendBookingCancellation,
+  sendBookingCancellationAdminNotification,
   sendBookingConfirmation,
+  sendBookingRescheduleAdminNotification,
   sendBookingRescheduleConfirmation,
   sendServiceRequestAdminNotification,
   sendServiceRequestConfirmation,

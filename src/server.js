@@ -77,7 +77,9 @@ const {
   publicEmailSettings,
   sendBookingAdminNotification,
   sendBookingCancellation,
+  sendBookingCancellationAdminNotification,
   sendBookingConfirmation,
+  sendBookingRescheduleAdminNotification,
   sendBookingRescheduleConfirmation,
   sendServiceRequestAdminNotification,
   sendServiceRequestConfirmation,
@@ -86,6 +88,7 @@ const {
 const { verifyRecaptcha } = require("./recaptcha");
 const { REMINDER_SETTING_KEY, getReminderMinutesBefore, startReminderService } = require("./reminders");
 const {
+  createSquarePayment,
   createSquarePaymentLink,
   createSquarePaymentLinkForServiceRequest,
   getSquareWebhookUrl,
@@ -137,12 +140,14 @@ app.use(
         defaultSrc: ["'self'"],
         // 'unsafe-inline' covers the single inline script on payment-return.html
         // and the dynamically-injected reCAPTCHA loader.
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://www.google.com", "https://www.gstatic.com"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        // Square Web Payments SDK needs its CDN + JS host for scripts; the card
+        // input renders in an iframe (frameSrc) and tokenizes over connectSrc.
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://www.google.com", "https://www.gstatic.com", "https://web.squarecdn.com", "https://sandbox.web.squarecdn.com", "https://js.squareup.com", "https://js.squareupsandbox.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://web.squarecdn.com", "https://sandbox.web.squarecdn.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:", "https://web.squarecdn.com", "https://sandbox.web.squarecdn.com"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://www.google.com"],
-        frameSrc: ["https://www.google.com"],
+        connectSrc: ["'self'", "https://www.google.com", "https://connect.squareup.com", "https://pci-connect.squareup.com", "https://web.squarecdn.com", "https://connect.squareupsandbox.com", "https://pci-connect.squareupsandbox.com", "https://sandbox.web.squarecdn.com", "https://o160250.ingest.sentry.io"],
+        frameSrc: ["https://www.google.com", "https://web.squarecdn.com", "https://connect.squareup.com", "https://sandbox.web.squarecdn.com", "https://connect.squareupsandbox.com"],
         formAction: ["'self'", "https://connect.squareup.com", "https://connect.squareupsandbox.com"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"]
@@ -1147,6 +1152,9 @@ app.get("/api/payment-config", (req, res) => {
   res.json({
     provider: "square",
     squareConfigured: isSquareConfigured(),
+    squareEnvironment: process.env.SQUARE_ENVIRONMENT === "production" ? "production" : "sandbox",
+    squareApplicationId: process.env.SQUARE_APPLICATION_ID || "",
+    squareLocationId: process.env.SQUARE_LOCATION_ID || "",
     recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY || ""
   });
 });
@@ -1246,6 +1254,17 @@ app.post("/api/bookings", submitLimiter, async (req, res, next) => {
   try {
     await verifyRecaptcha(req.body.recaptchaToken, req.ip);
     const validBooking = validateBookingPayload(req.body);
+
+    // Pay-before-confirm: a fee'd booking must arrive with a card token from the
+    // Web Payments SDK. $0 (Alberta Health Card) bookings need no payment.
+    const requiresPayment = validBooking.totalCents > 0 && isSquareConfigured();
+    const paymentToken = toText(req.body.paymentToken);
+    if (requiresPayment && !paymentToken) {
+      return res.status(400).json({
+        message: "Please enter your card details to complete this booking."
+      });
+    }
+
     const manageToken = createManageToken();
     let booking = createBooking(
       {
@@ -1271,28 +1290,44 @@ app.post("/api/bookings", submitLimiter, async (req, res, next) => {
       metadata: { reference: booking.reference, totalCents: booking.totalCents, needsScheduling: Boolean(validBooking.needsScheduling) }
     });
 
-    if (booking.totalCents > 0 && isSquareConfigured()) {
+    if (requiresPayment) {
       try {
-        const squarePaymentLink = await createSquarePaymentLink(booking);
-        booking = updateSquarePaymentLink(booking.id, squarePaymentLink);
+        const payment = await createSquarePayment({
+          sourceId: paymentToken,
+          amountCents: booking.totalCents,
+          referenceId: booking.reference,
+          note: `TelePlus Care booking ${booking.reference}`,
+          email: booking.email
+        });
+        if (payment.status !== "COMPLETED" && payment.status !== "APPROVED") {
+          throw new Error(`Payment was not completed (status: ${payment.status || "unknown"}).`);
+        }
+        // Record the order id so refund webhooks can match this booking, and
+        // flip it to paid.
+        updateSquarePaymentLink(booking.id, { id: "", url: "", orderId: payment.orderId });
+        booking = updateBooking(booking.id, {
+          status: booking.status,
+          paymentStatus: "paid",
+          internalNotes: booking.internalNotes || ""
+        });
         createBookingEvent({
           bookingId: booking.id,
-          eventType: "payment_link_created",
-          summary: "Square payment link created.",
-          metadata: { squarePaymentLinkId: booking.squarePaymentLinkId }
+          eventType: "payment_captured",
+          summary: `Card charged successfully ($${(booking.totalCents / 100).toFixed(2)} CAD).`,
+          metadata: { squarePaymentId: payment.id, squareOrderId: payment.orderId, receiptUrl: payment.receiptUrl }
         });
       } catch (error) {
-        updateBooking(booking.id, {
-          status: "cancelled",
-          paymentStatus: booking.paymentStatus
-        });
+        // Free the reserved slot — no confirmed booking without payment.
+        cancelManagedBooking(booking.id);
         createBookingEvent({
           bookingId: booking.id,
-          eventType: "cancelled",
-          summary: "Booking cancelled because Square payment link creation failed.",
+          eventType: "payment_failed",
+          summary: "Card was declined or the charge failed — booking released.",
           metadata: { error: error.message }
         });
-        throw error;
+        return res.status(402).json({
+          message: error.message || "Your card was declined. No appointment was booked and you were not charged."
+        });
       }
     }
 
@@ -1323,7 +1358,7 @@ app.post("/api/bookings", submitLimiter, async (req, res, next) => {
         totalCents: booking.totalCents,
         paymentStatus: booking.paymentStatus,
         paymentProvider: "square",
-        paymentUrl: booking.squarePaymentLinkUrl,
+        paid: booking.paymentStatus === "paid",
         manageUrl: emailResult.sent ? undefined : manageUrl
       },
       email: emailResult
@@ -1622,6 +1657,11 @@ app.patch("/api/manage-booking/reschedule", (req, res, next) => {
           metadata: { error: error.message }
         });
       });
+    // Notify the clinic/doctors that a patient moved their appointment.
+    sendBookingRescheduleAdminNotification(updatedBooking, {
+      fromDate: booking.appointmentDate,
+      fromTime: booking.appointmentTime
+    }).catch((error) => console.error("Reschedule staff notification failed:", error.message));
     return res.json({ booking: publicBooking(updatedBooking) });
   } catch (error) {
     if (error.code === "SQLITE_CONSTRAINT_UNIQUE" || error.code === "SLOT_FULL") {
@@ -1663,6 +1703,10 @@ app.post("/api/manage-booking/cancel", (req, res, next) => {
           });
         });
     }
+    // Always tell the clinic/doctors a patient cancelled (independent of the
+    // patient-facing cancellation email toggle).
+    sendBookingCancellationAdminNotification(updatedBooking)
+      .catch((error) => console.error("Cancellation staff notification failed:", error.message));
     return res.json({ booking: publicBooking(updatedBooking) });
   } catch (error) {
     return next(error);

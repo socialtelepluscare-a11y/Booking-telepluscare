@@ -309,13 +309,16 @@
             <!-- Step 5: Payment and Confirmation -->
             <div class="form-step" data-step="5">
               <section class="form-section" id="paymentSection">
-                <h2>Payment Methods</h2>
+                <h2>Payment</h2>
                 <div class="payment-methods">
-                  <label class="radio-row">
-                    <input type="radio" name="paymentMethod" value="square" checked required>
-                    <span>Square secure checkout</span>
-                  </label>
-                  <p class="payment-note" id="paymentNote">Paid bookings will continue to Square secure checkout when Square credentials are configured.</p>
+                  <input type="hidden" name="paymentMethod" value="square">
+                  <p class="payment-note" id="paymentNote">Enter your card below to pay securely. Your appointment is confirmed only once payment succeeds.</p>
+                  <div id="cardPaymentBox" class="card-payment-box" hidden>
+                    <span class="card-label">Card details</span>
+                    <div id="card-container"></div>
+                    <div id="cardErrors" class="card-errors" role="alert" aria-live="polite"></div>
+                    <p class="card-secure-note">🔒 Card processed securely by Square. TelePlus Care never sees your full card number.</p>
+                  </div>
                 </div>
               </section>
 

@@ -23,6 +23,8 @@ const phnField = document.querySelector("#phnField");
 const clinicClock = document.querySelector("#clinicClock");
 const paymentSection = document.querySelector("#paymentSection");
 const paymentNote = document.querySelector("#paymentNote");
+const cardPaymentBox = document.querySelector("#cardPaymentBox");
+const cardErrors = document.querySelector("#cardErrors");
 const snapshotDate = document.querySelector("#snapshotDate");
 const snapshotTime = document.querySelector("#snapshotTime");
 const snapshotService = document.querySelector("#snapshotService");
@@ -47,6 +49,48 @@ let selectedDate = "";
 let currentMonth = new Date();
 let currentStep = 1;
 let paymentConfig = { provider: "square", squareConfigured: false };
+let squareCard = null;
+let squareCardLoading = null;
+
+// Lazy-load Square's Web Payments SDK only when a paid booking actually needs it.
+function loadSquareSdk(environment) {
+  if (window.Square) {
+    return Promise.resolve(window.Square);
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = environment === "production"
+      ? "https://web.squarecdn.com/v1/square.js"
+      : "https://sandbox.web.squarecdn.com/v1/square.js";
+    script.onload = () => (window.Square ? resolve(window.Square) : reject(new Error("Secure payment form unavailable.")));
+    script.onerror = () => reject(new Error("Could not load the secure payment form. Please refresh and try again."));
+    document.head.appendChild(script);
+  });
+}
+
+// Build the embedded card field once; reused across attempts.
+async function ensureSquareCard() {
+  if (squareCard) {
+    return squareCard;
+  }
+  if (!paymentConfig.squareConfigured || !paymentConfig.squareApplicationId || !paymentConfig.squareLocationId) {
+    return null;
+  }
+  if (!squareCardLoading) {
+    squareCardLoading = (async () => {
+      const Square = await loadSquareSdk(paymentConfig.squareEnvironment);
+      const payments = Square.payments(paymentConfig.squareApplicationId, paymentConfig.squareLocationId);
+      const card = await payments.card();
+      await card.attach("#card-container");
+      squareCard = card;
+      return card;
+    })().catch((error) => {
+      squareCardLoading = null;
+      throw error;
+    });
+  }
+  return squareCardLoading;
+}
 
 let careOptionProductMap = {
   "Virtual Doctor Visit": "non-active-alberta-health-card",
@@ -415,11 +459,18 @@ function syncPaymentVisibility(totalCents = bookingTotalCents()) {
   paymentSection.hidden = hidePayment;
   bookingForm.querySelectorAll('input[name="paymentMethod"]').forEach((input) => {
     input.disabled = hidePayment;
-    input.required = !hidePayment;
-    if (!hidePayment && input.value === "square") {
-      input.checked = true;
-    }
   });
+
+  // Show the embedded card field only when there is actually a fee to charge.
+  const needsCard = !hidePayment && totalCents > 0 && paymentConfig.squareConfigured;
+  if (cardPaymentBox) {
+    cardPaymentBox.hidden = !needsCard;
+  }
+  if (needsCard) {
+    ensureSquareCard().catch((error) => {
+      if (cardErrors) cardErrors.textContent = error.message || "Payment form could not load.";
+    });
+  }
 }
 
 function syncHealthCardState() {
@@ -760,6 +811,23 @@ async function submitBooking(event) {
     const payload = readFormPayload();
     payload.recaptchaToken = await getRecaptchaToken();
 
+    // Pay before the booking is confirmed: tokenize the card on this page and
+    // send the token. The server charges it and only then creates the booking.
+    if (paymentConfig.squareConfigured && bookingTotalCents() > 0) {
+      if (cardErrors) cardErrors.textContent = "";
+      submitButton.textContent = "Processing payment...";
+      const card = await ensureSquareCard();
+      if (!card) {
+        throw new Error("The secure payment form is not ready. Please refresh and try again.");
+      }
+      const result = await card.tokenize();
+      if (result.status !== "OK") {
+        const detail = (result.errors || []).map((entry) => entry.message).join(" ");
+        throw new Error(detail || "Please check your card details and try again.");
+      }
+      payload.paymentToken = result.token;
+    }
+
     const response = await fetch("/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -777,20 +845,14 @@ async function submitBooking(event) {
     appointmentDateInput.value = "";
     appointmentTimeInput.value = "";
     syncAppointmentMode();
+    const paidPrefix = data.booking.paid ? "Payment received. " : "";
     const successMessage = data.booking.appointmentDate && data.booking.appointmentTime
-      ? `Appointment submitted. Reference ${data.booking.reference}. Your booking is set for ${data.booking.appointmentDate} at ${data.booking.appointmentTime}.`
-      : `Request submitted. Reference ${data.booking.reference}. Our team will contact you within 3 hours (we're open 9 AM–5 PM) to arrange your appointment time.`;
+      ? `${paidPrefix}Appointment confirmed. Reference ${data.booking.reference}. Your booking is set for ${data.booking.appointmentDate} at ${data.booking.appointmentTime}.`
+      : `${paidPrefix}Request submitted. Reference ${data.booking.reference}. Our team will contact you within 3 hours (we're open 9 AM–5 PM) to arrange your appointment time.`;
     if (data.booking.manageUrl) {
       setMessageWithLink("success", successMessage, data.booking.manageUrl, "Manage booking");
     } else {
       setMessage("success", `${successMessage} Confirmation email sent.`);
-    }
-    if (data.booking.paymentUrl) {
-      setMessage(
-        "success",
-        `Appointment submitted. Reference ${data.booking.reference}. Redirecting to Square secure checkout.`
-      );
-      window.location.href = data.booking.paymentUrl;
     }
   } catch (error) {
     setMessage("error", error.message);
@@ -874,8 +936,8 @@ async function init() {
   paymentConfig = await paymentResponse.json();
   loadRecaptcha(paymentConfig.recaptchaSiteKey);
   paymentNote.textContent = paymentConfig.squareConfigured
-    ? "Paid bookings continue to Square secure checkout after you submit."
-    : "Square is selected. Add Square credentials on the server to collect paid bookings automatically.";
+    ? "Paid bookings are charged securely on this page before your appointment is confirmed."
+    : "Online card payment isn't enabled yet. Add Square credentials on the server to collect payments.";
   products = productsData.products;
   careOptionProductMap = {
     ...careOptionProductMap,

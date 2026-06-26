@@ -4615,3 +4615,41 @@ body {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* =========================================================================
+   Embedded Square card field (pay-before-submit on the booking page).
+   ========================================================================= */
+.card-payment-box {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+.card-label {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+/* Square injects its own iframe here; give it a clean white field. */
+#card-container {
+  min-height: 44px;
+  padding: 4px 6px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.card-errors {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--danger);
+  min-height: 1em;
+}
+.card-secure-note {
+  margin: 10px 0 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+}

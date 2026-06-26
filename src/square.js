@@ -101,6 +101,58 @@ async function createSquarePaymentLinkForServiceRequest(serviceRequest) {
   });
 }
 
+// Charge a card token (from the Web Payments SDK on the booking page) directly,
+// so the patient pays before the booking is confirmed. Throws on decline/error.
+async function createSquarePayment({ sourceId, amountCents, referenceId, note, email }) {
+  if (!isSquareConfigured()) {
+    const error = new Error("Square is not configured.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const response = await fetch(`${getSquareBaseUrl()}/v2/payments`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+      "Square-Version": SQUARE_API_VERSION
+    },
+    body: JSON.stringify({
+      // Card tokens are single-use, so a fresh key per attempt is safe.
+      idempotency_key: crypto.randomUUID(),
+      source_id: sourceId,
+      amount_money: {
+        amount: amountCents,
+        currency: process.env.SQUARE_CURRENCY || "CAD"
+      },
+      location_id: process.env.SQUARE_LOCATION_ID,
+      reference_id: referenceId ? String(referenceId).slice(0, 40) : undefined,
+      note: note ? String(note).slice(0, 500) : undefined,
+      buyer_email_address: email || undefined
+    })
+  });
+
+  const payload = await response.json();
+
+  if (!response.ok) {
+    const message =
+      payload.errors?.map((error) => error.detail || error.code).join(" ") ||
+      "Your card could not be charged.";
+    const error = new Error(message);
+    error.statusCode = 402;
+    error.squareErrors = payload.errors;
+    throw error;
+  }
+
+  const payment = payload.payment || {};
+  return {
+    id: payment.id || "",
+    status: payment.status || "",
+    orderId: payment.order_id || "",
+    receiptUrl: payment.receipt_url || ""
+  };
+}
+
 function isSquareWebhookConfigured() {
   return Boolean(process.env.SQUARE_WEBHOOK_SIGNATURE_KEY);
 }
@@ -146,6 +198,7 @@ function verifySquareWebhookSignature(rawBody, signatureHeader, requestUrl) {
 }
 
 module.exports = {
+  createSquarePayment,
   createSquarePaymentLink,
   createSquarePaymentLinkForServiceRequest,
   getSquareWebhookUrl,
