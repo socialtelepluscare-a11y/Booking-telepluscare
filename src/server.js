@@ -549,8 +549,7 @@ function validateServiceRequestPayload(body, files = []) {
     ["province", "State / Province is required."],
     ["postalCode", "Postal / Zip Code is required."],
     ["dateOfBirth", "Date of birth is required."],
-    ["reason", "Reason is required."],
-    ["paymentMethod", "Payment method is required."]
+    ["reason", "Reason is required."]
   ];
 
   for (const [field, message] of requiredFields) {
@@ -577,8 +576,26 @@ function validateServiceRequestPayload(body, files = []) {
     errors.push("Reason must be 150 characters or less.");
   }
 
+  // Prescription refills are free for active Alberta Health Card holders;
+  // everyone else pays the configured fee. Doctor notes are a flat fee regardless.
+  const activeHealthCard = toText(body.activeHealthCard).toLowerCase();
+  const phn = toText(body.phn);
+  let totalCents = config ? config.totalCents : 0;
+  if (requestType === "prescription_refill") {
+    if (!["yes", "no"].includes(activeHealthCard)) {
+      errors.push("Please tell us if you have an active Alberta Health Card.");
+    }
+    if (activeHealthCard === "yes") {
+      if (!/^\d{9}$/.test(phn)) {
+        errors.push("A valid 9-digit Alberta Health Card number (PHN) is required.");
+      }
+      totalCents = 0;
+    }
+  }
+  const requiresPayment = totalCents > 0;
+
   const paymentMethod = toText(body.paymentMethod);
-  if (paymentMethod !== "square") {
+  if (requiresPayment && paymentMethod !== "square") {
     errors.push("Square secure checkout is required for this request.");
   }
 
@@ -647,16 +664,18 @@ function validateServiceRequestPayload(body, files = []) {
     reason,
     noteStartDate,
     noteEndDate,
-    totalCents: config.totalCents,
-    paymentMethod,
-    paymentStatus: "pending",
+    totalCents,
+    paymentMethod: requiresPayment ? paymentMethod : (paymentMethod || "not_required"),
+    paymentStatus: requiresPayment ? "pending" : "not_required",
     squarePaymentLinkId: "",
     squarePaymentLinkUrl: "",
     squareOrderId: "",
     internalNotes: "",
     fieldsJson: JSON.stringify({
       serviceLabel: config.label,
-      policyAcknowledged
+      policyAcknowledged,
+      activeHealthCard: requestType === "prescription_refill" ? activeHealthCard : undefined,
+      phn: (requestType === "prescription_refill" && activeHealthCard === "yes") ? phn : undefined
     }),
     status: "new"
   };

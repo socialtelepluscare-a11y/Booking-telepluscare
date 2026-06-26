@@ -8,6 +8,46 @@ const noteEndDate = document.querySelector("#noteEndDate");
 const fileInput = document.querySelector("#attachments");
 const submitButton = requestForm.querySelector("button[type='submit']");
 
+// Prescription-refill only: Alberta Health Card holders pay nothing.
+const activeHealthCard = document.querySelector("#activeHealthCard");
+const phnField = document.querySelector("#phnField");
+const phnInput = document.querySelector("#phn");
+const feeCategory = document.querySelector("#feeCategory");
+const feeTotalPill = document.querySelector("#feeTotalPill");
+const feePrice = document.querySelector("#feePrice");
+const summaryTotal = document.querySelector("#summaryTotal");
+const paymentSection = document.querySelector("#paymentSection");
+const PRESCRIPTION_FEE = "$50.00 CAD";
+
+function syncHealthCardPricing() {
+  if (!activeHealthCard) {
+    return; // not the prescription form (e.g. doctor note)
+  }
+  const isFree = activeHealthCard.value === "yes";
+
+  if (phnField) phnField.hidden = !isFree;
+  if (phnInput) {
+    phnInput.required = isFree;
+    if (!isFree) phnInput.value = "";
+  }
+
+  const priceText = isFree ? "$0.00 CAD" : PRESCRIPTION_FEE;
+  if (feeTotalPill) feeTotalPill.textContent = priceText;
+  if (feePrice) feePrice.textContent = priceText;
+  if (summaryTotal) summaryTotal.textContent = priceText;
+  if (feeCategory) {
+    feeCategory.textContent = isFree ? "Free with active Alberta Health Card" : "$50 for up to 3 medications";
+  }
+
+  // No payment step when it's free.
+  if (paymentSection) paymentSection.hidden = isFree;
+  const paymentRadio = requestForm.querySelector('input[name="paymentMethod"]');
+  if (paymentRadio) {
+    paymentRadio.required = !isFree;
+    paymentRadio.disabled = isFree;
+  }
+}
+
 const currency = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" });
 let paymentConfig = { provider: "square", squareConfigured: false };
 
@@ -180,9 +220,13 @@ async function init() {
     : "Square is selected. Add Square credentials on the server to collect this payment automatically.";
 
   updateReasonCount();
+  syncHealthCardPricing();
 }
 
 reasonInput.addEventListener("input", updateReasonCount);
+if (activeHealthCard) {
+  activeHealthCard.addEventListener("change", syncHealthCardPricing);
+}
 requestForm.addEventListener("submit", submitServiceRequest);
 
 init().catch((error) => setMessage("error", error.message));

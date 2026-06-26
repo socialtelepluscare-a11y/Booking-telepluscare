@@ -35,7 +35,7 @@
             <h1 id="request-title">Prescription Refill Appointment</h1>
           </div>
           <div class="clinic-badges" aria-label="Request highlights">
-            <span>Processed within 3 hours</span>
+            <span>Processed within 2 hours</span>
             <span>Up to 3 medications</span>
             <span>No controlled drugs</span>
           </div>
@@ -50,7 +50,7 @@
 
           <section class="form-section request-intro">
             <h2>Prescription Refill Appointment</h2>
-            <p>Prescription requests are processed within 3 hours after your appointment. Please provide accurate medication details and required proof.</p>
+            <p>Prescription requests are processed within 2 hours after your appointment. Please provide accurate medication details and required proof.</p>
             <p>Working hours: 9:00 AM-5:00 PM. Refunds: A $20 fee is deducted for administration and payment gateway charges.</p>
           </section>
 
@@ -106,6 +106,25 @@
           </section>
 
           <section class="form-section">
+            <h2>Alberta Health Card</h2>
+            <div class="form-grid">
+              <label>
+                Do you have an active Alberta Health Card (PHN)? <span aria-hidden="true">*</span>
+                <select id="activeHealthCard" name="activeHealthCard" required>
+                  <option value="">Please Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </label>
+              <label id="phnField" hidden>
+                Alberta Health Card Number (PHN) <span aria-hidden="true">*</span>
+                <input id="phn" name="phn" inputmode="numeric" placeholder="9-digit PHN" pattern="\d{9}" maxlength="9">
+              </label>
+            </div>
+            <p class="payment-note" id="healthCardNote">Active Alberta Health Card holders get prescription refills <strong>free</strong>. Without one, the fee is $50.00 CAD.</p>
+          </section>
+
+          <section class="form-section">
             <h2>Refill Details</h2>
             <div class="form-grid">
               <label class="full-width">
@@ -132,11 +151,11 @@
             <div class="section-heading-row">
               <div>
                 <h2>Medication Refill Fee</h2>
-                <p class="category-label">$50 for up to 3 medications</p>
+                <p class="category-label" id="feeCategory">$50 for up to 3 medications</p>
               </div>
               <div class="total-pill">
                 <span>Total</span>
-                <strong>$50.00 CAD</strong>
+                <strong id="feeTotalPill">$50.00 CAD</strong>
               </div>
             </div>
 
@@ -145,11 +164,11 @@
                 <strong>Prescription Refill</strong>
                 <p>Request and receive your official prescription refill after your appointment.</p>
               </div>
-              <span class="price">$50.00 CAD</span>
+              <span class="price" id="feePrice">$50.00 CAD</span>
             </div>
           </section>
 
-          <section class="form-section">
+          <section class="form-section" id="paymentSection">
             <h2>Payment Method</h2>
             <div class="payment-methods">
               <label class="radio-row">
@@ -186,7 +205,7 @@
           </div>
           <div class="snapshot-row">
             <span>Total</span>
-            <strong>$50.00 CAD</strong>
+            <strong id="summaryTotal">$50.00 CAD</strong>
           </div>
         </div>
 

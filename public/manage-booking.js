@@ -311,9 +311,16 @@ async function rescheduleBooking() {
     booking = data.booking;
     renderBooking();
     await selectDate(booking.appointmentDate);
-    setMessage("success", `Booking rescheduled to ${booking.appointmentDate} at ${booking.appointmentTime}.`);
+    const rescheduledMsg = `Booking rescheduled to ${booking.appointmentDate} at ${booking.appointmentTime}.`;
+    setMessage("success", rescheduledMsg);
+    if (window.tpAlert) {
+      window.tpAlert.success("Appointment updated!", rescheduledMsg);
+    }
   } catch (error) {
     setMessage("error", error.message);
+    if (window.tpAlert) {
+      window.tpAlert.error("Could not reschedule", error.message);
+    }
   } finally {
     rescheduleButton.disabled = false;
     rescheduleButton.textContent = "Save New Time";
@@ -323,7 +330,14 @@ async function rescheduleBooking() {
 async function cancelBooking() {
   clearMessage();
 
-  if (!window.confirm("Cancel this appointment?")) {
+  const confirmed = window.tpAlert
+    ? await window.tpAlert.confirm(
+        "Cancel this appointment?",
+        "This will release your appointment time. This can't be undone.",
+        "Yes, cancel it"
+      )
+    : window.confirm("Cancel this appointment?");
+  if (!confirmed) {
     return;
   }
 
@@ -344,8 +358,14 @@ async function cancelBooking() {
     booking = data.booking;
     renderBooking();
     setMessage("success", "Your appointment has been cancelled.");
+    if (window.tpAlert) {
+      window.tpAlert.success("Appointment cancelled", "Your appointment time has been released.");
+    }
   } catch (error) {
     setMessage("error", error.message);
+    if (window.tpAlert) {
+      window.tpAlert.error("Could not cancel", error.message);
+    }
   } finally {
     cancelButton.disabled = false;
     cancelButton.textContent = "Cancel Appointment";

@@ -728,16 +728,17 @@ function renderSlots(slots) {
     slotGrid.append(button);
   }
 
-  if (!slots.some((slot) => slot.available)) {
-    const prompt = document.createElement("div");
-    prompt.className = "waitlist-prompt";
-    prompt.innerHTML = `
-      <strong>No open slots for this date</strong>
-      <span>Join the waitlist and staff can follow up if a spot opens.</span>
-      <button type="button" class="secondary-button" data-join-waitlist>Join Waitlist</button>
-    `;
-    slotGrid.append(prompt);
-  }
+  // Always offer the waitlist from the calendar: prominent when the day is full,
+  // subtle when there are still open times (in case none of them suit the patient).
+  const hasOpen = slots.some((slot) => slot.available);
+  const prompt = document.createElement("div");
+  prompt.className = hasOpen ? "waitlist-prompt waitlist-prompt-subtle" : "waitlist-prompt";
+  prompt.innerHTML = hasOpen
+    ? `<span>None of these times work? <button type="button" class="link-button" data-join-waitlist>Join the waitlist</button> and we'll reach out if a better spot opens.</span>`
+    : `<strong>No open slots for this date</strong>
+       <span>Join the waitlist and staff can follow up if a spot opens.</span>
+       <button type="button" class="secondary-button" data-join-waitlist>Join Waitlist</button>`;
+  slotGrid.append(prompt);
 }
 
 function renderWaitlistPrompt(message) {
@@ -854,8 +855,17 @@ async function submitBooking(event) {
     } else {
       setMessage("success", `${successMessage} Confirmation email sent.`);
     }
+    if (window.tpAlert) {
+      const popupTitle = data.booking.appointmentDate && data.booking.appointmentTime
+        ? "Appointment confirmed!"
+        : "Request received!";
+      window.tpAlert.success(popupTitle, successMessage);
+    }
   } catch (error) {
     setMessage("error", error.message);
+    if (window.tpAlert) {
+      window.tpAlert.error("Booking not completed", error.message);
+    }
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Confirm Booking";
@@ -912,9 +922,16 @@ async function joinWaitlist() {
       throw new Error(data.details?.join(" ") || data.message || "Could not join waitlist.");
     }
 
-    setMessage("success", "You are on the waitlist for this date. TelePlus Care staff will follow up if a spot opens.");
+    const waitlistMsg = "You are on the waitlist for this date. TelePlus Care staff will follow up if a spot opens.";
+    setMessage("success", waitlistMsg);
+    if (window.tpAlert) {
+      window.tpAlert.success("You're on the waitlist!", waitlistMsg);
+    }
   } catch (error) {
     setMessage("error", error.message);
+    if (window.tpAlert) {
+      window.tpAlert.error("Could not join the waitlist", error.message);
+    }
     if (waitlistButton) {
       waitlistButton.disabled = false;
       waitlistButton.textContent = "Join Waitlist";
