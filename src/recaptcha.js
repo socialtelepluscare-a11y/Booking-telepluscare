@@ -4,7 +4,18 @@ function isRecaptchaConfigured() {
 
 let warnedMissingRecaptcha = false;
 
+function isRecaptchaDisabled() {
+  return ["1", "true", "yes", "on"].includes(String(process.env.DISABLE_RECAPTCHA || "").toLowerCase());
+}
+
 async function verifyRecaptcha(token, remoteIp) {
+  // Explicit opt-out: skip spam protection entirely, even in production.
+  // Set DISABLE_RECAPTCHA=true to launch without reCAPTCHA (re-enable later by
+  // removing it and adding RECAPTCHA_SITE_KEY + RECAPTCHA_SECRET_KEY).
+  if (isRecaptchaDisabled()) {
+    return { success: true, skipped: true };
+  }
+
   if (!isRecaptchaConfigured()) {
     // Fail CLOSED in production: a missing key must not silently disable bot
     // protection on a live deployment. In non-production we allow submissions
