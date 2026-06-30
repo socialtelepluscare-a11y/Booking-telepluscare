@@ -31,8 +31,9 @@ async function createSquarePaymentLinkForCharge(charge) {
     },
     body: JSON.stringify({
       // Stable per charge so a retry reuses the same payment link instead of
-      // creating a duplicate order. Square dedupes on this key.
-      idempotency_key: `teleplus-${charge.reference}`,
+      // creating a duplicate order. Square dedupes on this key. A caller can
+      // pass its own key (e.g. manual re-charges) to force a fresh link.
+      idempotency_key: charge.idempotencyKey || `teleplus-${charge.reference}`,
       description: charge.description,
       quick_pay: {
         name: charge.name,
@@ -80,6 +81,22 @@ async function createSquarePaymentLink(booking) {
     description: `TelePlus Care booking ${booking.reference}`,
     name: `TelePlus Care appointment ${booking.reference}`,
     paymentNote: `TelePlus Care booking ${booking.reference}`
+  });
+}
+
+// Staff-initiated charge: bill an arbitrary amount against an existing booking
+// (e.g. the patient forgot to pay). Uses a unique idempotency key so each
+// request creates a fresh payment link even for the same booking reference.
+async function createManualPaymentLink(booking, amountCents) {
+  return createSquarePaymentLinkForCharge({
+    reference: booking.reference,
+    idempotencyKey: `teleplus-manual-${booking.reference}-${crypto.randomUUID()}`,
+    totalCents: amountCents,
+    email: booking.email,
+    phone: booking.phone,
+    description: `TelePlus Care payment for booking ${booking.reference}`,
+    name: `TelePlus Care payment ${booking.reference}`,
+    paymentNote: `Staff payment request for ${booking.reference}`
   });
 }
 
@@ -200,6 +217,7 @@ function verifySquareWebhookSignature(rawBody, signatureHeader, requestUrl) {
 module.exports = {
   createSquarePayment,
   createSquarePaymentLink,
+  createManualPaymentLink,
   createSquarePaymentLinkForServiceRequest,
   getSquareWebhookUrl,
   isSquareConfigured,

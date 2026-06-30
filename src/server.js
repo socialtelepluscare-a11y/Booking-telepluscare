@@ -37,6 +37,7 @@ const {
   cancelManagedBooking,
   createAttachment,
   createBooking,
+  deleteBooking,
   createBookingEvent,
   createServiceRequest,
   createServiceRequestAttachment,
@@ -62,6 +63,7 @@ const {
   rescheduleManagedBooking,
   setSetting,
   updateBooking,
+  updateBookingCharge,
   updatePartialFormDraftStatus,
   updateServiceRequest,
   updateServiceRequestSquarePaymentLink,
@@ -79,6 +81,7 @@ const {
   sendBookingCancellation,
   sendBookingCancellationAdminNotification,
   sendBookingConfirmation,
+  sendPaymentRequest,
   sendBookingRescheduleAdminNotification,
   sendBookingRescheduleConfirmation,
   sendServiceRequestAdminNotification,
@@ -90,6 +93,7 @@ const { REMINDER_SETTING_KEY, getReminderMinutesBefore, startReminderService } =
 const {
   createSquarePayment,
   createSquarePaymentLink,
+  createManualPaymentLink,
   createSquarePaymentLinkForServiceRequest,
   getSquareWebhookUrl,
   isSquareConfigured,
@@ -1304,7 +1308,7 @@ app.post("/api/bookings", submitLimiter, async (req, res, next) => {
       bookingId: booking.id,
       eventType: "created",
       summary: validBooking.needsScheduling
-        ? "Out-of-Alberta request created with no appointment time. Contact patient within 3 hours to schedule."
+        ? "Out-of-Alberta request created with no appointment time. Contact patient soon to schedule."
         : `Booking created for ${booking.appointmentDate} at ${booking.appointmentTime}.`,
       metadata: { reference: booking.reference, totalCents: booking.totalCents, needsScheduling: Boolean(validBooking.needsScheduling) }
     });
@@ -2047,6 +2051,59 @@ app.patch("/api/admin/bookings/:id", requireAdmin, (req, res, next) => {
     }
 
     return res.json({ booking: adminBooking(booking) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// Staff-initiated payment: set an amount, mark pending, create a Square link, email the patient.
+app.post("/api/admin/bookings/:id/request-payment", requireAdmin, async (req, res, next) => {
+  try {
+    const existingBooking = getBookingById(req.params.id);
+    if (!existingBooking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    const amountCents = Math.round(Number(req.body.amountCents));
+    if (!Number.isFinite(amountCents) || amountCents < 100 || amountCents > 1000000) {
+      return res.status(400).json({ message: "Enter a valid amount of at least $1.00." });
+    }
+
+    if (!isSquareConfigured()) {
+      return res.status(400).json({ message: "Square is not configured, so a payment link cannot be created." });
+    }
+
+    let booking = updateBookingCharge(existingBooking.id, { totalCents: amountCents, paymentStatus: "pending" });
+    const paymentLink = await createManualPaymentLink(booking, amountCents);
+    booking = updateSquarePaymentLink(booking.id, paymentLink);
+
+    const emailResult = await sendPaymentRequest(booking, paymentLink.url).catch((error) => {
+      console.error("Payment request email failed:", error.message);
+      return { sent: false, reason: "email_failed" };
+    });
+
+    createBookingEvent({
+      bookingId: booking.id,
+      eventType: "payment_requested",
+      summary: `Payment of $${(amountCents / 100).toFixed(2)} CAD requested${emailResult.sent ? " and emailed to the patient" : " (email not sent)"}.`,
+      metadata: { amountCents, paymentUrl: paymentLink.url, emailSent: emailResult.sent }
+    });
+
+    return res.json({ booking: adminBooking(booking), paymentUrl: paymentLink.url, email: emailResult });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// Permanently delete a booking (and its attachments/events via cascade). For removing test data.
+app.delete("/api/admin/bookings/:id", requireAdmin, (req, res, next) => {
+  try {
+    const existingBooking = getBookingById(req.params.id);
+    if (!existingBooking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+    deleteBooking(existingBooking.id);
+    return res.json({ deleted: true, reference: existingBooking.reference });
   } catch (error) {
     return next(error);
   }

@@ -920,6 +920,26 @@ function updateBooking(id, updates) {
   return getBookingById(id);
 }
 
+const updateBookingChargeStatement = db.prepare(`
+  UPDATE bookings
+  SET total_cents = @totalCents,
+      payment_status = @paymentStatus,
+      payment_method = 'square',
+      updated_at = datetime('now')
+  WHERE id = @id
+`);
+
+// Staff sets a new charge amount + payment status on a booking (manual payment request).
+function updateBookingCharge(id, { totalCents, paymentStatus }) {
+  updateBookingChargeStatement.run({ id, totalCents, paymentStatus });
+  return getBookingById(id);
+}
+
+// Permanently remove a booking; attachments and events cascade (foreign_keys = ON).
+function deleteBooking(id) {
+  return db.prepare("DELETE FROM bookings WHERE id = ?").run(id).changes > 0;
+}
+
 function updateSquarePaymentLink(id, squarePaymentLink) {
   updateSquarePaymentLinkStatement.run({
     id,
@@ -1240,7 +1260,9 @@ module.exports = {
   markReminderSent,
   rescheduleManagedBooking,
   setSetting,
+  deleteBooking,
   updateBooking,
+  updateBookingCharge,
   updatePartialFormDraftStatus,
   updateServiceRequest,
   updateServiceRequestSquarePaymentLink,

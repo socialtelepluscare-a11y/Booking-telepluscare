@@ -849,7 +849,7 @@ async function submitBooking(event) {
     const paidPrefix = data.booking.paid ? "Payment received. " : "";
     const successMessage = data.booking.appointmentDate && data.booking.appointmentTime
       ? `${paidPrefix}Appointment confirmed. Reference ${data.booking.reference}. Your booking is set for ${data.booking.appointmentDate} at ${data.booking.appointmentTime}.`
-      : `${paidPrefix}Request submitted. Reference ${data.booking.reference}. Our team will contact you within 3 hours (we're open 9 AM–5 PM) to arrange your appointment time.`;
+      : `${paidPrefix}Request submitted. Reference ${data.booking.reference}. Our team will contact you soon to arrange your appointment time.`;
     if (data.booking.manageUrl) {
       setMessageWithLink("success", successMessage, data.booking.manageUrl, "Manage booking");
     } else {

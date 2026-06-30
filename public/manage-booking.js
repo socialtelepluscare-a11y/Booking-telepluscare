@@ -131,9 +131,12 @@ function renderBooking() {
       </div>
       <div>
         <span class="summary-label">Appointment</span>
-        <strong>${escapeHtml(booking.appointmentDate)}</strong>
+        ${booking.appointmentDate && booking.appointmentTime
+          ? `<strong>${escapeHtml(booking.appointmentDate)}</strong>
         <span>${escapeHtml(booking.appointmentTime)}</span>
-        <span>${escapeHtml(booking.timezone)}</span>
+        <span>${escapeHtml(booking.timezone)}</span>`
+          : `<strong>Callback request</strong>
+        <span>We'll contact you soon to arrange your time</span>`}
       </div>
       <div>
         <span class="summary-label">Service</span>

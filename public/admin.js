@@ -126,6 +126,25 @@ function formatCad(cents) {
   return currency.format(cents / 100);
 }
 
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// "2026-07-02" -> "Jul 2, 2026"
+function formatNiceDate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || "").trim());
+  if (!match) return value || "";
+  return `${MONTH_ABBR[Number(match[2]) - 1]} ${Number(match[3])}, ${match[1]}`;
+}
+
+// "2026-06-30 15:34:25" -> "Jun 30, 2026, 3:34 PM"
+function formatNiceDateTime(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(value || "").trim());
+  if (!match) return formatNiceDate(value);
+  let hours = Number(match[4]);
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${MONTH_ABBR[Number(match[2]) - 1]} ${Number(match[3])}, ${match[1]}, ${hours}:${match[5]} ${ampm}`;
+}
+
 function centsToDollars(cents) {
   return Math.round(Number(cents || 0)) / 100;
 }
@@ -1305,7 +1324,7 @@ function bookingTimeline(booking) {
       <strong>Timeline</strong>
       ${booking.events.slice(0, 6).map((event) => `
         <div class="timeline-item">
-          <span>${escapeHtml(event.createdAt)}</span>
+          <span>${escapeHtml(formatNiceDateTime(event.createdAt))}</span>
           <small>${escapeHtml(event.summary)}</small>
         </div>
       `).join("")}
@@ -1334,7 +1353,7 @@ function bookingListItem(booking) {
   item.dataset.select = booking.id;
   const when =
     booking.appointmentDate && booking.appointmentTime
-      ? `${escapeHtml(booking.appointmentDate)} · ${escapeHtml(booking.appointmentTime)}`
+      ? `${escapeHtml(formatNiceDate(booking.appointmentDate))} · ${escapeHtml(booking.appointmentTime)}`
       : "Callback request";
   item.innerHTML = `
     <span class="inbox-item-dot status-${escapeHtml(booking.status)}"></span>
@@ -1361,7 +1380,7 @@ function renderBookingDetail(booking) {
 
   const appointment =
     booking.appointmentDate && booking.appointmentTime
-      ? `${escapeHtml(booking.appointmentDate)} at ${escapeHtml(booking.appointmentTime)} <span class="muted">(${escapeHtml(booking.timezone)})</span>`
+      ? `${escapeHtml(formatNiceDate(booking.appointmentDate))} at ${escapeHtml(booking.appointmentTime)} <span class="muted">(${escapeHtml(booking.timezone)})</span>`
       : `<span class="pill pill-amber">Callback request</span>`;
 
   bookingDetail.innerHTML = `
@@ -1374,7 +1393,7 @@ function renderBookingDetail(booking) {
     </div>
 
     <dl class="detail-list">
-      ${detailRow("Submitted", escapeHtml(booking.createdAt))}
+      ${detailRow("Submitted", escapeHtml(formatNiceDateTime(booking.createdAt)))}
       ${detailRow("Appointment", appointment)}
       ${detailRow("Reason for visit", booking.visitReason ? escapeHtml(booking.visitReason) : "")}
       ${detailRow("Gender", `<span class="pill">${escapeHtml(booking.gender)}</span>`)}
@@ -1407,11 +1426,21 @@ function renderBookingDetail(booking) {
           <option value="refunded">Refunded</option>
         </select>
       </label>
+      <div class="payment-request" data-payment-request ${booking.paymentStatus === "pending" ? "" : "hidden"}>
+        <label>Amount to charge (CAD)
+          <input type="number" data-charge-amount min="1" step="0.01" value="${booking.totalCents ? (booking.totalCents / 100).toFixed(2) : ""}" placeholder="40.00">
+        </label>
+        <button type="button" class="secondary-button" data-request-payment="${booking.id}">Send Square payment link</button>
+        <p class="payment-request-note">Marks payment pending, creates a Square link, and emails it to the patient.</p>
+      </div>
       <label class="detail-notes">Internal notes
         <textarea data-notes="${booking.id}" class="notes-input" placeholder="Add a private note for staff">${escapeHtml(booking.internalNotes || "")}</textarea>
       </label>
       ${paymentLink(booking)}
-      <button type="button" class="primary-button" data-update="${booking.id}">Save changes</button>
+      <div class="detail-action-buttons">
+        <button type="button" class="primary-button" data-update="${booking.id}">Save changes</button>
+        <button type="button" class="danger-button" data-delete-booking="${booking.id}">Delete booking</button>
+      </div>
     </div>
 
     ${bookingTimeline(booking)}
@@ -1835,6 +1864,63 @@ async function updateBooking(id) {
   await loadSlotOccupancy();
 }
 
+async function requestBookingPayment(id) {
+  const amountInput = bookingDetail.querySelector("[data-charge-amount]");
+  const dollars = Number(amountInput ? amountInput.value : 0);
+  if (!Number.isFinite(dollars) || dollars < 1) {
+    setAdminMessage("error", "Enter an amount of at least $1.00 to request payment.");
+    return;
+  }
+  const amountCents = Math.round(dollars * 100);
+  const proceed = window.tpAlert
+    ? await window.tpAlert.confirm("Send payment link?", `Charge $${dollars.toFixed(2)} CAD and email a Square payment link to the patient?`, "Send link")
+    : window.confirm(`Charge $${dollars.toFixed(2)} and email a Square payment link?`);
+  if (!proceed) {
+    return;
+  }
+
+  const response = await fetch(apiUrl(`/api/admin/bookings/${id}/request-payment`), {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amountCents })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Could not create the payment link.");
+  }
+
+  const emailNote = data.email && data.email.sent ? "Payment link emailed to the patient." : "Payment link created (email not sent).";
+  setAdminMessage("success", `${data.booking.reference}: $${dollars.toFixed(2)} requested. ${emailNote}`);
+  if (window.tpAlert) {
+    window.tpAlert.success("Payment requested", emailNote);
+  }
+  await loadBookings();
+}
+
+async function deleteBookingAdmin(id) {
+  const proceed = window.tpAlert
+    ? await window.tpAlert.confirm("Delete this booking?", "This permanently removes the appointment and its history. This cannot be undone.", "Delete")
+    : window.confirm("Permanently delete this booking? This cannot be undone.");
+  if (!proceed) {
+    return;
+  }
+
+  const response = await fetch(apiUrl(`/api/admin/bookings/${id}`), {
+    method: "DELETE",
+    credentials: "same-origin"
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Could not delete the booking.");
+  }
+
+  selectedBookingId = null;
+  setAdminMessage("success", `${data.reference} deleted.`);
+  await loadBookings();
+  await loadSlotOccupancy();
+}
+
 async function loadServiceRequests() {
   const query = serviceRequestQuery();
   const response = await fetch(apiUrl(query ? `/api/admin/service-requests?${query}` : "/api/admin/service-requests"), {
@@ -2126,11 +2212,32 @@ bookingList.addEventListener("click", (event) => {
 });
 
 bookingDetail.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-update]");
-  if (!button) {
+  const saveButton = event.target.closest("[data-update]");
+  if (saveButton) {
+    updateBooking(saveButton.dataset.update).catch((error) => setAdminMessage("error", error.message));
     return;
   }
-  updateBooking(button.dataset.update).catch((error) => setAdminMessage("error", error.message));
+  const payButton = event.target.closest("[data-request-payment]");
+  if (payButton) {
+    requestBookingPayment(payButton.dataset.requestPayment).catch((error) => setAdminMessage("error", error.message));
+    return;
+  }
+  const deleteButton = event.target.closest("[data-delete-booking]");
+  if (deleteButton) {
+    deleteBookingAdmin(deleteButton.dataset.deleteBooking).catch((error) => setAdminMessage("error", error.message));
+  }
+});
+
+// Show the "amount + send Square link" controls only when Payment = Pending.
+bookingDetail.addEventListener("change", (event) => {
+  const select = event.target.closest("[data-payment]");
+  if (!select) {
+    return;
+  }
+  const requestBox = bookingDetail.querySelector("[data-payment-request]");
+  if (requestBox) {
+    requestBox.hidden = select.value !== "pending";
+  }
 });
 
 slotControlGrid.addEventListener("click", (event) => {

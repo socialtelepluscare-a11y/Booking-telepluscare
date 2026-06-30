@@ -281,7 +281,7 @@ function healthCardValue(booking) {
 
 function appointmentWhenText(booking) {
   return (!booking.appointmentDate || !booking.appointmentTime)
-    ? "Our team will contact you within 3 hours (open 9 AM-5 PM) to arrange the time"
+    ? "Our team will contact you soon to arrange the time"
     : `${booking.appointmentDate} at ${booking.appointmentTime} (${booking.timezone})`;
 }
 
@@ -289,7 +289,7 @@ function appointmentWhenText(booking) {
 // and the staff notification so both show the complete record.
 function bookingDetailRows(booking) {
   const whenRow = (!booking.appointmentDate || !booking.appointmentTime)
-    ? ["When", "Our team will contact you within <strong>3 hours</strong> (open 9 AM&ndash;5 PM) to arrange the time."]
+    ? ["When", "Our team will contact you <strong>soon</strong> to arrange the time."]
     : ["When", `${escapeHtml(formatLongDate(booking.appointmentDate))}<br>${escapeHtml(booking.appointmentTime)} &middot; ${escapeHtml(booking.timezone)}`];
 
   return [
@@ -473,7 +473,7 @@ TelePlus Care`;
 
   const html = emailLayout({
     heading: needsScheduling ? "Request received — we'll call you" : "Appointment request received",
-    preheader: needsScheduling ? "We'll contact you within 3 hours to set your time." : `${formatLongDate(booking.appointmentDate)} at ${booking.appointmentTime}`,
+    preheader: needsScheduling ? "We'll contact you soon to set your time." : `${formatLongDate(booking.appointmentDate)} at ${booking.appointmentTime}`,
     bodyHtml: `
       ${greetingHtml(booking.firstName)}
       ${leadParagraph(intro)}
@@ -512,7 +512,7 @@ TelePlus Care`;
       ${detailTable([
         booking.appointmentDate && booking.appointmentTime
           ? ["When", `${escapeHtml(formatLongDate(booking.appointmentDate))}<br>${escapeHtml(booking.appointmentTime)} &middot; ${escapeHtml(booking.timezone)}`]
-          : ["When", "Not yet scheduled — callback request (contact within 3 hours)"],
+          : ["When", "Not yet scheduled — callback request (we'll contact you soon)"],
         ["Service", escapeHtml(productLines(booking))],
         ["Reference", escapeHtml(booking.reference)]
       ])}
@@ -551,7 +551,7 @@ TelePlus Care`;
       ${detailTable([
         booking.appointmentDate && booking.appointmentTime
           ? ["When", `${escapeHtml(formatLongDate(booking.appointmentDate))}<br>${escapeHtml(booking.appointmentTime)} &middot; ${escapeHtml(booking.timezone)}`]
-          : ["When", "Not yet scheduled — callback request (contact within 3 hours)"],
+          : ["When", "Not yet scheduled — callback request (we'll contact you soon)"],
         ["Service", escapeHtml(productLines(booking))],
         ["Reference", escapeHtml(booking.reference)]
       ])}
@@ -645,6 +645,55 @@ async function sendBookingConfirmation(booking, manageUrl) {
     }
     return { sent: false, reason: "email_not_configured" };
   }
+
+  await createTransporter(settings).sendMail({
+    ...mailSender(settings),
+    to: booking.email,
+    subject,
+    text,
+    html
+  });
+
+  return { sent: true };
+}
+
+async function sendPaymentRequest(booking, paymentUrl) {
+  const settings = getEmailSettings();
+  const amount = formatCad(booking.totalCents);
+  const subject = `Payment requested — ${booking.reference}`;
+
+  const text = `Hi ${booking.firstName},
+
+TelePlus Care has requested a payment of ${amount} CAD for your booking ${booking.reference}.
+
+Pay securely with Square:
+${paymentUrl}
+
+If you have already paid, you can ignore this message. Questions? Call ${BRAND.phone} or email ${BRAND.email}.
+
+TelePlus Care`;
+
+  if (!isEmailConfigured(settings)) {
+    console.log("Email is not configured. Payment request preview:");
+    console.log(`To: ${booking.email} | Amount: ${amount} CAD | Pay: ${paymentUrl}`);
+    return { sent: false, reason: "email_not_configured" };
+  }
+
+  const html = emailLayout({
+    heading: "Complete your payment",
+    preheader: `A payment of ${amount} is requested for ${booking.reference}.`,
+    bodyHtml: `
+      ${greetingHtml(booking.firstName)}
+      ${leadParagraph(`TelePlus Care has requested a payment of ${amount} CAD for your booking. You can pay securely with Square using the button below.`)}
+      ${detailTable([
+        ["Amount due", escapeHtml(`${amount} CAD`)],
+        ["Service", escapeHtml(productLines(booking))],
+        ["Reference", escapeHtml(booking.reference)]
+      ])}
+      ${buttonStack(emailButton("Pay securely with Square", paymentUrl, "primary"))}
+      <p style="margin:14px 0 0; font-size:14px; line-height:1.55; color:${BRAND.muted};">Already paid? You can ignore this email. Questions? Call ${BRAND.phone} or email ${BRAND.email}.</p>
+    `
+  });
 
   await createTransporter(settings).sendMail({
     ...mailSender(settings),
@@ -979,6 +1028,7 @@ module.exports = {
   sendBookingCancellation,
   sendBookingCancellationAdminNotification,
   sendBookingConfirmation,
+  sendPaymentRequest,
   sendBookingRescheduleAdminNotification,
   sendBookingRescheduleConfirmation,
   sendServiceRequestAdminNotification,
