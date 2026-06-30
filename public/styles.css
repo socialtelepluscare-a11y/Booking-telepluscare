@@ -4223,7 +4223,14 @@ body {
 }
 @media (max-width: 640px) {
   .clinic-badges {
+    /* On small screens, let the badges wrap onto multiple rows and stay
+       within the panel instead of running off-screen on a single line. */
+    flex-wrap: wrap;
+    overflow-x: visible;
     justify-content: center;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 100%;
     gap: 6px;
   }
   .clinic-badges span {
